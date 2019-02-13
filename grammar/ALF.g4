@@ -1,7 +1,7 @@
 grammar ALF;
 
 alf_statement:
-	type = alf_type (
+	alf_type (
 		left_index = index? name = alf_name right_index = index?
 	)? ('=' assign_value = alf_value)? (
 		';'
@@ -23,7 +23,27 @@ alf_value:
 	| boolean_expression
 	| control_expression;
 
-// alf_statement_termination: ';' | '{' (alf_value | ':' | ';')* '}' | '{' alf_statement* '}';
+alf_unit: '{'+'UNIT'+'=' value = alf_value ';'+'}';
+
+alf_units:
+	  'TIME'+alf_unit
+	| 'FREQUENCY'+alf_unit
+	| 'DISTANCE'+alf_unit
+	| 'AREA'+alf_unit
+	| 'VOLTAGE'+alf_unit
+	| 'CURRENT'+alf_unit
+	| 'ENERGY'+alf_unit
+	| 'POWER'+alf_unit
+	| 'CAPACITANCE'+alf_unit
+	| 'RESISTANCE'+alf_unit
+	| 'INDUCTANCE'+alf_unit
+;
+ 
+alf_power_rails:
+	'VOLTAGE' identifier '{' header '}'
+;
+
+// alf_statement_teralf_mination: ';' | '{' (alf_value | ':' | ';')* '}' | '{' alf_statement* '}';
 
 fragment Character: // See Syntax 2, 6.1
 	Letter
@@ -36,7 +56,7 @@ Whitespace: [ \t\n\u000B\r\f] -> channel (HIDDEN);
 Letter: [A-Za-z];
 
 fragment Digit: [0-9];
-fragment Special: [&|^~+\-*/%?!:;,"'@=\\.$_#()<>[\]{}];
+fragment Special: [&|^~+\-*/%?!:;,"'@\\.$_#()<>[\]];
 
 // Comment: In_line_comment | Block_comment; // See Syntax 3, 6.2
 In_line_comment: '//' Character* [\n\r] -> channel (HIDDEN);
@@ -135,7 +155,7 @@ index_value:
 index: single_index | multi_index; // See Syntax 8, 6.6
 single_index: '[' index_value ']';
 multi_index:
-	'[' from_index = index_value ':' until_index = index_value ']';
+	'[' alf_from_index = index_value ':' until_index = index_value ']';
 
 multiplier_prefix_symbol:
 	(
@@ -228,8 +248,8 @@ indexed_identifier:
 	atomic_identifier index; // See Syntax 20, 6.13.3
 optional_indexed_identifier: atomic_identifier index?;
 full_hierarchical_identifier:
-	list += optional_indexed_identifier (
-		'.' list += optional_indexed_identifier
+	alf_list += optional_indexed_identifier (
+		'.' alf_list += optional_indexed_identifier
 	)+; // See Syntax 21, 6.13.4
 partial_hierarchical_identifier:
 	(
@@ -247,9 +267,9 @@ Escaped_identifier:
 fragment Escapable_character: Letter | Digit | Special;
 Keyword_identifier:
 	Letter ('_'? Letter)*; // See Syntax 24, 6.13.7
+
 Quoted_string: '"' ('\\' . | ~'"')* '"'; // See Syntax 25, 6.14
 
-string_value: Quoted_string | identifier; // See Syntax 26, 6.15
 generic_value:
 	Number
 	| multiplier_prefix_symbol
@@ -290,30 +310,30 @@ annotation_value:
 	| boolean_expression
 	| arithmetic_expression;
 annotation_container:
-	id = identifier '{' annotations += annotation+ '}'; // See Syntax 32, 7.4
+	alf_id = identifier '{' annotations += annotation+ '}'; // See Syntax 32, 7.4
 
 attribute:
 	'ATTRIBUTE' '{' attributes += identifier+ '}'; // See Syntax 33, 7.5
-property:
-	'PROPERTY' id = identifier? '{' annotations += annotation+ '}'; // See Syntax 34, 7.6
+alf_property:
+	'PROPERTY' alf_id = identifier? '{' annotations += annotation+ '}'; // See Syntax 34, 7.6
 
 alias_declaration:
 	'ALIAS' (
-		id = identifier '=' original = identifier
+		alf_id = identifier '=' original = identifier
 		| macro = Vector_expression_macro '=' '(' expression = vector_expression ')'
 	) ';'; // See Syntax 35, 7.7
 constant_declaration:
-	'CONSTANT' id = identifier '=' value = constant_value ';'; // See Syntax 36, 7.8
+	'CONSTANT' alf_id = identifier '=' value = constant_value ';'; // See Syntax 36, 7.8
 constant_value: Number | Based_literal;
 
 keyword_declaration:
-	'KEYWORD' id = Keyword_identifier '=' target = identifier (
+	'KEYWORD' alf_id = Keyword_identifier '=' target = identifier (
 		';'
 		| '{' annotations += annotation* '}'
 	); // See Syntax 37, 7.9
 
 semantics_declaration:
-	'SEMANTICS' id = identifier (
+	'SEMANTICS' alf_id = identifier (
 		'=' syntax_item = identifier ';'
 		| ('=' syntax_item = identifier)? '{' semantics += semantics_item* '}'
 	); // See Syntax 38, 7.10
@@ -326,32 +346,32 @@ semantics_item:
 	| si_model = single_value_annotation;
 
 class_declaration:
-	'CLASS' id = identifier (';' | '{' body += class_item* '}'); // See Syntax 39, 7.12
+	'CLASS' alf_id = identifier (';' | '{' body += class_item* '}'); // See Syntax 39, 7.12
 class_item:
 	all_purpose_item
 	| geometric_model
 	| geometric_transformation;
 
 group_declaration:
-	'GROUP' id = identifier (
+	'GROUP' alf_id = identifier (
 		'{' values += generic_value+ '}'
 		| '{' left = index_value ':' right = index_value '}'
 	); // See Syntax 40, 7.14
 
 template_declaration:
-	'TEMPLATE' id = identifier '{' statements += alf_statement+ '}'; // See Syntax 41, 7.15
+	'TEMPLATE' alf_id = identifier '{' statements += alf_statement+ '}'; // See Syntax 41, 7.15
 
 template_instantiation:
 	static_template_instantiation // See Syntax 42, 7.16
 	| dynamic_template_instantiation;
 static_template_instantiation:
-	id = identifier ('=' 'static')? (
+	alf_id = identifier ('=' 'static')? (
 		';'
 		| '{' values += generic_value* '}'
 		| '{' annotations += annotation* '}'
 	);
 dynamic_template_instantiation:
-	id = identifier '=' 'dynamic' '{' items += dynamic_template_instantiation_item* '}';
+	alf_id = identifier '=' 'dynamic' '{' items += dynamic_template_instantiation_item* '}';
 dynamic_template_instantiation_item:
 	annotation
 	| arithmetic_model
@@ -364,10 +384,10 @@ include_statement:
 associate_statement:
 	'ASSOCIATE' target = Quoted_string (
 		';'
-		| '{' format = single_value_annotation '}'
+		| '{' alf_format = single_value_annotation '}'
 	); // See Syntax 44, 7.18
 
-revision: 'ALF_REVISION' string_value; // See Syntax 45, 7.19
+alf_revision: 'ALF_REVISION' alf_value; // See Syntax 45, 7.19
 
 library_specific_object:
 	library
@@ -389,20 +409,21 @@ library_specific_object:
 	| port
 	| pattern
 	| region; // See Syntax 46, 8.1
+
 library:
-	'LIBRARY' id = identifier (
+	'LIBRARY' alf_id = identifier (
 		';'
 		| '{' body += library_item* '}'
 	)
 	| library_template = template_instantiation; // See Syntax 47, 8.2
+
 library_item: sublibrary | sublibrary_item;
 
 sublibrary:
-	'SUBLIBRARY' id = identifier (
-		';'
-		| '{' body += sublibrary_item* '}'
-	)
-	| sublibray_template = template_instantiation;
+	'SUBLIBRARY' alf_id = identifier (
+		body += sublibrary_item*
+	);
+	//| sublibray_template = template_instantiation;
 sublibrary_item:
 	all_purpose_item
 	| cell
@@ -414,10 +435,17 @@ sublibrary_item:
 	| antenna
 	| array
 	| site
-	| region;
+	| region
+	| alf_units
+	| alf_power_rails
+	| table
+	;
+
+time:
+	'TIME';
 
 cell:
-	'CELL' id = identifier (';' | '{' body += cell_item* '}')
+	'CELL' alf_id = identifier (';' | '{' body += cell_item* '}')
 	| cell_template = template_instantiation; // See Syntax 48, 8.4
 cell_item:
 	all_purpose_item
@@ -437,7 +465,7 @@ cell_item:
 pin: scalar_pin | vector_pin | matrix_pin; // See Syntax 49, 8.6
 
 scalar_pin:
-	'PIN' id = identifier (
+	'PIN' alf_id = identifier (
 		';'
 		| '{' body += scalar_pin_item* '}'
 	)
@@ -445,15 +473,15 @@ scalar_pin:
 scalar_pin_item: all_purpose_item | pattern | port;
 
 vector_pin:
-	'PIN' pin_index = multi_index id = identifier (
+	'PIN' pin_index = multi_index alf_id = identifier (
 		';'
 		| '{' body += vector_pin_item* '}'
 	)
 	| vector_pin_template = template_instantiation;
-vector_pin_item: all_purpose_item | range;
+vector_pin_item: all_purpose_item | alf_range;
 
 matrix_pin:
-	'PIN' first = multi_index id = identifier second = multi_index (
+	'PIN' first = multi_index alf_id = identifier second = multi_index (
 		';'
 		| '{' body += matrix_pin_item* '}'
 	)
@@ -465,17 +493,17 @@ pingroup:
 	| vector_pingroup; // See Syntax 50, 8.7
 
 simple_pingroup:
-	'PINGROUP' id = identifier '{' pingroup_annotation = multi_value_annotation body +=
+	'PINGROUP' alf_id = identifier '{' pingroup_annotation = multi_value_annotation body +=
 		all_purpose_item* '}'
 	| template_instantiation;
 vector_pingroup:
-	'PINGROUP' vector_index = multi_index id = identifier '{' pingroup_annotation =
+	'PINGROUP' vector_index = multi_index alf_id = identifier '{' pingroup_annotation =
 		multi_value_annotation body += vector_pingroup_item* '}'
 	| template_instantiation;
 
-vector_pingroup_item: all_purpose_item | range;
+vector_pingroup_item: all_purpose_item | alf_range;
 primitive:
-	'PRIMITIVE' id = identifier (
+	'PRIMITIVE' alf_id = identifier (
 		';'
 		| '{' body += primitive_item* '}'
 	)
@@ -488,12 +516,12 @@ primitive_item:
 	| test;
 
 wire:
-	'WIRE' id = identifier (';' | '{' body += wire_item* '}')
+	'WIRE' alf_id = identifier (';' | '{' body += wire_item* '}')
 	| template_instantiation; // See Syntax 52, 8.10
 wire_item: all_purpose_item | node;
 
 node:
-	'NODE' id = identifier (';' | '{' body += node_item* '}')
+	'NODE' alf_id = identifier (';' | '{' body += node_item* '}')
 	| template_instantiation; // See Syntax 53, 8.12
 node_item: all_purpose_item;
 
@@ -506,17 +534,17 @@ vector:
 vector_item: all_purpose_item | wire_instantiation;
 
 layer:
-	'LAYER' id = identifier (';' | '{' body += layer_item* '}')
+	'LAYER' alf_id = identifier (';' | '{' body += layer_item* '}')
 	| template_instantiation; // See Syntax 55, 8.16
 layer_item: all_purpose_item;
 
 via:
-	'VIA' id = identifier (';' | '{' body += via_item* '}')
+	'VIA' alf_id = identifier (';' | '{' body += via_item* '}')
 	| template_instantiation; // See Syntax 56, 8.18
 via_item: all_purpose_item | pattern | artwork;
 
 ruler:
-	'RULE' id = identifier (';' | '{' body += rule_item* '}')
+	'RULE' alf_id = identifier (';' | '{' body += rule_item* '}')
 	| template_instantiation; // See Syntax 57, 8.20
 rule_item:
 	all_purpose_item
@@ -525,7 +553,7 @@ rule_item:
 	| via_instantiation;
 
 antenna:
-	'ANTENNA' id = identifier (
+	'ANTENNA' alf_id = identifier (
 		';'
 		| '{' body += antenna_item* '}'
 	)
@@ -533,7 +561,7 @@ antenna:
 antenna_item: all_purpose_item | region;
 
 blockage:
-	'BLOCKAGE' id = identifier (
+	'BLOCKAGE' alf_id = identifier (
 		';'
 		| '{' body += blockage_item* '}'
 	)
@@ -546,7 +574,7 @@ blockage_item:
 	| via_instantiation;
 
 port:
-	'PORT' id = identifier (';' | '{' body += port_item* '}')
+	'PORT' alf_id = identifier (';' | '{' body += port_item* '}')
 	| template_instantiation; // See Syntax 60, 8.23
 port_item:
 	all_purpose_item
@@ -556,7 +584,7 @@ port_item:
 	| via_instantiation;
 
 site:
-	'SITE' id = identifier (';' | '{' body += site_item* '}')
+	'SITE' alf_id = identifier (';' | '{' body += site_item* '}')
 	| template_instantiation; // See Syntax 61, 8.25
 site_item:
 	all_purpose_item
@@ -564,12 +592,12 @@ site_item:
 	| height = arithmetic_model;
 
 array:
-	'ARRAY' id = identifier (';' | '{' body += array_item* '}')
+	'ARRAY' alf_id = identifier (';' | '{' body += array_item* '}')
 	| template_instantiation; // See Syntax 62, 8.27
 array_item: all_purpose_item | geometric_transformation;
 
 pattern:
-	'PATTERN' id = identifier (
+	'PATTERN' alf_id = identifier (
 		';'
 		| '{' body += pattern_item* '}'
 	)
@@ -580,7 +608,7 @@ pattern_item:
 	| geometric_transformation;
 
 region:
-	'REGION' id = identifier (';' | '{' body += region_item* '}')
+	'REGION' alf_id = identifier (';' | '{' body += region_item* '}')
 	| template_instantiation; // See Syntax 64, 8.31
 region_item:
 	all_purpose_item
@@ -637,7 +665,7 @@ cell_instantiation:
 cell_instance_pin_assignment:
 	pin_variable = identifier '=' pin_value ';';
 statetable:
-	'STATETABLE' id = identifier? '{' tableheader = statetable_header rows += statetable_row+ '}'
+	'STATETABLE' alf_id = identifier? '{' tableheader = statetable_header rows += statetable_row+ '}'
 	| template_instantiation; // See Syntax 71, 9.6
 statetable_header:
 	inputs += identifier+ ':' outputs += identifier+ ';';
@@ -657,13 +685,13 @@ non_scan_cell:
 	| 'NON_SCAN_CELL' '{' references += non_scan_cell_reference+ '}'
 	| template_instantiation; // See Syntax 72, 9.7
 non_scan_cell_reference:
-	id = identifier '{' scan_cell_pins += identifier '}'
-	| id = identifier '{' (
+	alf_id = identifier '{' scan_cell_pins += identifier '}'
+	| alf_id = identifier '{' (
 		non_scan_cell_pins += identifier '=' scan_cell_pins += identifier ';'
 	)* '}';
 
-range:
-	'RANGE' '{' from_index = index_value ':' until_index = index_value '}'; // See Syntax 73, 9.8
+alf_range:
+	'RANGE' '{' alf_from_index = index_value ':' until_index = index_value '}'; // See Syntax 73, 9.8
 
 boolean_expression:
 	'(' inner = boolean_expression ')'
@@ -726,7 +754,7 @@ wire_instance_pin_assignment:
 	wire_reference_pin = identifier '=' wire_instance = pin_value ';';
 
 geometric_model:
-	Non_escaped_identifier id = identifier? '{' body += geometric_model_item+ '}'
+	Non_escaped_identifier alf_id = identifier? '{' body += geometric_model_item+ '}'
 	| template_instantiation; // See Syntax 77, 9.16
 geometric_model_item:
 	point_to_point = single_value_annotation
@@ -749,14 +777,14 @@ repeat:
 
 artwork:
 	'ARTWORK' (
-		'=' id = identifier ';'
+		'=' alf_id = identifier ';'
 		| '=' references += artwork_reference
 		| '{' references += artwork_reference+ '}'
 	)
 	| template_instantiation; // See Syntax 79, 9.19
 
 artwork_reference:
-	id = identifier '{' transforms += geometric_transformation* (
+	alf_id = identifier '{' transforms += geometric_transformation* (
 		cell_pins += identifier*
 		| (
 			artwork_pin += identifier '=' cell_pins += identifier ';'
@@ -764,7 +792,7 @@ artwork_reference:
 	) '}';
 instance_identifier: identifier;
 via_instantiation:
-	id = identifier instance = identifier (
+	alf_id = identifier instance = identifier (
 		';'
 		| '{' transforms += geometric_transformation* '}'
 	); // See Syntax 80, 9.20
@@ -783,8 +811,8 @@ arithmetic_expression:
 Abs: 'abs';
 Exp: 'exp';
 Log: 'log';
-Min: 'min';
-Max: 'max';
+Min: 'alf_min';
+Max: 'alf_max';
 macro_arithmetic_operator: Abs | Exp | Log | Min | Max;
 
 arithmetic_model:
@@ -805,15 +833,15 @@ partial_arithmetic_model:
 partial_arithmetic_model_item:
 	arithmetic_model_qualifier
 	| table
-	| trivial_min_max;
+	| trivial_alf_min_alf_max;
 full_arithmetic_model:
 	arithmetic_ref = identifier name = identifier? '{' qualifiers += arithmetic_model_qualifier*
 		body = arithmetic_model_body qualifiers += arithmetic_model_qualifier* '}';
 // See Syntax 85, 10.3
 
 arithmetic_model_body:
-	header_table_equation trivial_min_max?
-	| min_typ_max
+	header_table_equation trivial_alf_min_alf_max?
+	| alf_min_typ_alf_max
 	| arithmetic_submodel+; // See Syntax 86, 10.3
 arithmetic_model_qualifier:
 	inheritable_arithmetic_model_qualifier
@@ -821,7 +849,7 @@ arithmetic_model_qualifier:
 inheritable_arithmetic_model_qualifier:
 	annotation
 	| annotation_container
-	| from_to;
+	| alf_from_to;
 non_inheritable_arithmetic_model_qualifier:
 	auxiliary_arithmetic_model
 	| violation;
@@ -835,33 +863,33 @@ header_arithmetic_model:
 header_arithmetic_model_item:
 	inheritable_arithmetic_model_qualifier
 	| table
-	| trivial_min_max;
+	| trivial_alf_min_alf_max;
 
 equation:
 	'EQUATION' '{' arithmetic_expression '}'
 	| template_instantiation; // See Syntax 90, 10.4
 
-table: 'TABLE' '{' arithmetic_value+ '}';
-min_typ_max: min_max | min? typ max?; // See Syntax 92, 10.5
-min_max: min | max | min max;
-min: trivial_min | non_trivial_min;
-max: trivial_max | non_trivial_max;
+table: 'TABLE' '{' ( ret += alf_value* );
+alf_min_typ_alf_max: alf_min_alf_max | alf_min? typ alf_max?; // See Syntax 92, 10.5
+alf_min_alf_max: alf_min | alf_max | alf_min alf_max;
+alf_min: trivial_alf_min | non_trivial_alf_min;
+alf_max: trivial_alf_max | non_trivial_alf_max;
 typ: trivial_typ | non_trivial_typ;
-non_trivial_min:
+non_trivial_alf_min:
 	'MIN' '=' val = arithmetic_value '{' violations = violation '}'
 	| 'MIN' '{' violations = violation? table_equation = header_table_equation '}';
 // See Syntax 93, 10.5
-non_trivial_max:
+non_trivial_alf_max:
 	'MAX' '=' val = arithmetic_value '{' violations = violation '}'
 	| 'MAX' '{' violations = violation? table_equation = header_table_equation '}';
 non_trivial_typ:
 	'TYP' '{' table_equation = header_table_equation '}';
-trivial_min_max:
-	trivial_min // See Syntax 94, 10.5
-	| trivial_max
-	| trivial_min trivial_max;
-trivial_min: 'MIN' '=' val = arithmetic_value ';';
-trivial_max: 'MAX' '=' val = arithmetic_value ';';
+trivial_alf_min_alf_max:
+	trivial_alf_min // See Syntax 94, 10.5
+	| trivial_alf_max
+	| trivial_alf_min trivial_alf_max;
+trivial_alf_min: 'MIN' '=' val = arithmetic_value ';';
+trivial_alf_max: 'MAX' '=' val = arithmetic_value ';';
 trivial_typ: 'TYP' '=' val = arithmetic_value ';';
 auxiliary_arithmetic_model:
 	arithmetic_ref = identifier '=' val = arithmetic_value ';'
@@ -871,9 +899,9 @@ auxiliary_arithmetic_model:
 arithmetic_submodel:
 	sumodel = identifier (
 		'=' val = arithmetic_value ';'
-		| '{' violation? min_max '}'
-		| '{' header_table_equation ( trivial_min_max)? '}'
-		| '{' min_typ_max '}'
+		| '{' violation? alf_min_alf_max '}'
+		| '{' header_table_equation ( trivial_alf_min_alf_max)? '}'
+		| '{' alf_min_typ_alf_max '}'
 	)
 	| template_instantiation; // See Syntax 96, 10.7
 
@@ -889,9 +917,9 @@ limit_arithmetic_model:
 		body = limit_arithmetic_model_body '}';
 limit_arithmetic_model_body:
 	submodels += limit_arithmetic_submodel+
-	| min_max;
+	| alf_min_alf_max;
 limit_arithmetic_submodel:
-	submodel = identifier '{' violation? min_max '}';
+	submodel = identifier '{' violation? alf_min_alf_max '}';
 
 early_late_arithmetic_model_container:
 	early_arithmetic_model_container late_arithmetic_model_container?
@@ -911,10 +939,12 @@ violation_item:
 	| message = single_value_annotation
 	| behavior;
 
-from_to: from to? | to; // See Syntax 101, 10.12
-from: 'FROM' '{' body += from_to_item+ '}';
-to: 'TO' '{' body += from_to_item+ '}';
-from_to_item:
+alf_from_to: alf_from to? | to; // See Syntax 101, 10.12
+alf_from: 'FROM' '{' body += alf_from_to_item+ '}';
+to: 'TO' '{' body += alf_from_to_item+ '}';
+alf_from_to_item:
 	pin_reference = single_value_annotation
 	| edge_number = single_value_annotation
 	| threshold = arithmetic_model;
+
+start: alf_revision library;

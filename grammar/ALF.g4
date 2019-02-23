@@ -70,7 +70,15 @@ Digit: [2-9];
 fragment Decimal_digits: '0'|'1'|Digit;
 
 // See Syntax 1, 5.1
-alf_statement: alf_type alf_name? ('=' alf_value)? alf_statement_termination | statement_disamb;
+alf_statement:
+	alf_type alf_name? ('=' alf_value)? alf_statement_termination
+	| alf_from_to
+	| header
+	| table
+	| pin
+	| equation
+	| cell
+;
 
 alf_type: identifier | '@' | ':';
 
@@ -82,7 +90,7 @@ alf_value:
 	| arithmetic_expression
 	| boolean_expression
 	| control_expression
-	| quoted_string
+	| Quoted_string
 	| '0'
 	| '1'
 	;
@@ -93,19 +101,6 @@ alf_statement_termination:
 	| '{' ( alf_value | ':' | ';' )+ '}'
 	| '{' alf_statement+ '}'
 ;
-
-statement_disamb:
-	alf_from_to
-	| header
-	| table
-	| pin
-	| equation
-	| vector
-	| cell
-	| group_declaration
-	| function
-	| behavior
-	;
 
 fragment Character: // See Syntax 2, 6.1
 	Letter
@@ -122,7 +117,7 @@ Whitespace: ([ \t\u000B\r\f] | Newline)  -> channel (HIDDEN);
 Letter: [A-Za-z];
 
 //fragment Special: [&|^~+\-*/%?!:;,"'@\\.$_#()<>[\]{}];
-fragment Special: [&|^~/%?!"'\\$_#<>];
+fragment Special: [&|^~/%?!'\\$_#<>\-+];
 
 // Comment: In_line_comment | Block_comment; // See Syntax 3, 6.2
 In_line_comment: '//' Character* [\n\r] -> channel (HIDDEN);
@@ -254,7 +249,7 @@ multiplier_prefix_value:
 	| multiplier_prefix_symbol
 	; // See Syntax 10, 6.7
 
-bit_literal:
+Bit_literal:
 	'0'
 	|'1'
 	| '?'
@@ -264,13 +259,13 @@ bit_literal:
 //[XZLHUWxzlhuw]
 
 based_literal:
-	binary_based_literal
+	Binary_based_literal
 	| Octal_Based_literal
 	| Decimal_Based_literal
 	| Hexadecimal_Based_literal; // See Syntax 12, 6.9
 
-binary_based_literal:
-	Binary_base bit_literal ('_'? bit_literal)*;
+Binary_based_literal:
+	Binary_base Bit_literal ('_'? Bit_literal)*;
 Binary_base: '\'' [Bb];
 Octal_Based_literal: Octal_base Octal_digit ('_'? Octal_digit)*;
 fragment Octal_base: '\'' [Oo];
@@ -290,19 +285,19 @@ boolean_value:
 arithmetic_value:
 	Number
 	| identifier
-	//| bit_literal
+	//| Bit_literal
 	| edge_literal
 	| based_literal
 	| '0'
 	| '1'
 	; // See Syntax 14, 6.11
 
-edge_literal: bit_edge_literal | symbolic_edge_literal;
+edge_literal: Bit_edge_literal | Symbolic_edge_literal;
 
-bit_edge_literal: bit_literal bit_literal;
+Bit_edge_literal: Bit_literal Bit_literal;
 
 based_edge_literal: based_literal based_literal;
-symbolic_edge_literal: '?~' | '?!' | '?-';
+Symbolic_edge_literal: '?~' | '?!' | '?-';
 edge_value: '(' edge_literal ')';
 
 identifier:
@@ -354,14 +349,14 @@ Escapable_character: Letter | Decimal_digits | Special;
 keyword_identifier:
 	Letter ('_'? Letter)*; // See Syntax 24, 6.13.7
 
-quoted_string: '"' ('\\' . | ~'"')* '"'; // See Syntax 25, 6.14
+Quoted_string: '"' Character* '"'; // See Syntax 25, 6.14
 
 generic_value:
 	Number
 	| multiplier_prefix_symbol
 	| identifier
-	| quoted_string
-	//| bit_literal
+	| Quoted_string
+	//| Bit_literal
 	| based_literal
 	//| edge_value
 	| '0'
@@ -491,10 +486,10 @@ arithmetic_assignment:
 
 
 include_statement:
-	INCLUDE target = quoted_string ';'; // See Syntax 43, 7.17
+	INCLUDE target = Quoted_string ';'; // See Syntax 43, 7.17
 
 associate_statement:
-	ASSOCIATE target = quoted_string (
+	ASSOCIATE target = Quoted_string (
 		';'
 		| '{' alf_format = single_value_annotation '}'
 	); // See Syntax 44, 7.18
@@ -550,7 +545,9 @@ sublibrary_item:
 	| array
 	| site
 	| region
-	| statement_disamb
+	| alf_from_to
+	| header
+	| table
 	;
 
 cell:
@@ -1108,4 +1105,5 @@ alf_from_to:
 
 alf_from: FROM '{' body += alf_from_to_item+ '}';
 alf_to: TO '{' body += alf_from_to_item+ '}';
-start: alf_revision library;
+
+start: alf_revision library EOF;

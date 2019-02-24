@@ -1051,8 +1051,10 @@ alf_from_to_item:
 	;
 
 alf_from_to:
-	alf_from alf_to?
-	|alf_from? alf_to
+	alf_from
+	|alf_to
+	|alf_from alf_to
+	|alf_to alf_from
 	;
 
 alf_from: FROM OpenSwirly body += alf_from_to_item+ CloseSwirly;

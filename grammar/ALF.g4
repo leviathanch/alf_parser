@@ -331,15 +331,14 @@ annotation:
 	| multi_value_annotation
 	; // See Syntax 31, 7.3
 
-single_value_annotation:
-	identifier Assign alf_value SemiColon
-	;
+single_value_annotation: identifier Assign alf_value SemiColon;
 
 multi_value_annotation: identifier OpenSwirly alf_value+ CloseSwirly;
 
 annotation_container:
-	  alf_id = identifier OpenSwirly annotations += annotation+ CloseSwirly // See Syntax 32, 7.4
-	| alf_id = identifier name = identifier OpenSwirly annotations += annotation+ CloseSwirly;
+	  alf_id = identifier OpenSwirly annotations += annotation+ CloseSwirly
+	| alf_id = identifier name = identifier OpenSwirly annotations += annotation+ CloseSwirly
+	;  // See Syntax 32, 7.4
 
 attribute:
 	ATTRIBUTE OpenSwirly attributes += identifier+ CloseSwirly; // See Syntax 33, 7.5
@@ -566,10 +565,11 @@ vector:
 
 vector_item:
 	annotation
-	| annotation_container
+	//| annotation_container
 	| arithmetic_model
-	| arithmetic_model_container
+	//| arithmetic_model_container
 	| wire_instantiation
+	| template_instantiation
 	;
 
 layer:
@@ -614,7 +614,9 @@ blockage_item:
 
 port:
 	'PORT' alf_id = identifier (SemiColon | OpenSwirly body += port_item* CloseSwirly)
-	| template_instantiation; // See Syntax 60, 8.23
+	//| template_instantiation
+	; // See Syntax 60, 8.23
+
 port_item:
 	all_purpose_item
 	| pattern
@@ -640,7 +642,9 @@ pattern:
 		SemiColon
 		| OpenSwirly body += pattern_item* CloseSwirly
 	)
-	| template_instantiation; // See Syntax 63, 8.29
+	//| template_instantiation
+	; // See Syntax 63, 8.29
+
 pattern_item:
 	all_purpose_item
 	| geometric_model
@@ -804,7 +808,9 @@ wire_instantiation:
 		| OpenSwirly values += pin_value* CloseSwirly
 		| OpenSwirly assignments += pin_assignment* CloseSwirly
 	)
-	| template_instantiation; // See Syntax 76, 9.15
+	//| template_instantiation
+	; // See Syntax 76, 9.15
+
 wire_instance_pin_assignment:
 	wire_reference_pin = identifier Assign wire_instance = pin_value SemiColon;
 
@@ -941,7 +947,9 @@ equation:
 	| template_instantiation; // See Syntax 90, 10.4
 
 table: 'TABLE' OpenSwirly ( ret += alf_value* ) CloseSwirly;
+
 alf_min_typ_alf_max: alf_min_alf_max | alf_min? typ alf_max?; // See Syntax 92, 10.5
+
 alf_min_alf_max: alf_min | alf_max | alf_min alf_max;
 alf_min: trivial_alf_min | non_trivial_alf_min;
 alf_max: trivial_alf_max | non_trivial_alf_max;
@@ -955,10 +963,13 @@ non_trivial_alf_max:
 	| MAX OpenSwirly violations = violation? table_equation = header_table_equation CloseSwirly;
 non_trivial_typ:
 	TYP OpenSwirly table_equation = header_table_equation CloseSwirly;
+
 trivial_alf_min_alf_max:
-	trivial_alf_min // See Syntax 94, 10.5
+	trivial_alf_min
 	| trivial_alf_max
-	| trivial_alf_min trivial_alf_max;
+	| trivial_alf_min trivial_alf_max
+	; // See Syntax 94, 10.5
+
 trivial_alf_min: MIN Assign val = alf_value SemiColon;
 trivial_alf_max: MAX Assign val = alf_value SemiColon;
 trivial_typ: TYP Assign val = alf_value SemiColon;
@@ -975,7 +986,8 @@ arithmetic_submodel:
 arithmetic_model_container:
 	limit_arithmetic_model_container
 	| early_late_arithmetic_model_container
-	| container = identifier OpenSwirly arithmetic_model+ CloseSwirly; // See Syntax 97, 10.8.1
+	| container = identifier OpenSwirly arithmetic_model+ CloseSwirly
+	; // See Syntax 97, 10.8.1
 
 limit_arithmetic_model_container:
 	LIMIT OpenSwirly limit_arithmetic_model+ CloseSwirly; // See Syntax 98, 10.8.2

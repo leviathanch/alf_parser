@@ -70,6 +70,9 @@ fragment AToF: [ABCDEFabcdef];
 
 ZERO: '0';
 ONE: '1';
+Plus: '+';
+Minus: '-';
+AtSign: '@';
 
 fragment Binary_digit: ZERO|ONE;
 fragment Octal_digit: [2-7];
@@ -88,7 +91,7 @@ alf_statement:
 	| cell
 ;
 
-alf_type: identifier | '@' | Colon;
+alf_type: identifier | AtSign | Colon;
 
 alf_name: identifier | control_expression;
 
@@ -118,25 +121,17 @@ fragment Character: // See Syntax 2, 6.1
 fragment Newline: '\n';
 
 Whitespace: ([ \t\u000B\r\f] | Newline)  -> channel (HIDDEN);
-// Whitespace: [ \t\n\u000B\r\f] -> skip;
 
 Letter: [A-Za-z];
 
-//fragment Special: [&|^~+\-*/%?!:;,"'@\\.$_#()<>[\]{}];
 fragment Special: [&|^~/%?!'\\$_#<>\-+];
 
 // Comment: In_line_comment | Block_comment; // See Syntax 3, 6.2
 In_line_comment: '//' Character* [\n\r] -> channel (HIDDEN);
 Block_comment: '/*' Character* '*/' -> channel (HIDDEN);
 
-//fragment Delimiter: [(){}[\]:;,]; // See Syntax 4, 6.3
-
-// operator_: arithmetic_operator | boolean_operator | relational_operator | shift_operator |
-// event_operator | meta_operator; // See Syntax 5, 6.4
-
-//arithmetic_operator: '+' | '-' | '*' | '/' | '%' | '**';
-unary_operator: '+' | '-';
-arithmetic_operator: unary_operator | '*' | '/' | '%' | '**';
+unary_operator: Plus | Minus;
+arithmetic_operator: Plus | Minus | '*' | '/' | '%' | '**';
 
 LogicAnd: '&&';
 LogicOr: '||';
@@ -186,7 +181,7 @@ Event_operator:
 	| SimultaneousOrImmediatelyFollowingEachOther
 	;
 
-// Assignment: '='; Condition: '?'; Control: '@'; 
+// Assignment: '='; Condition: '?'; Control: AtSign; 
 
 // meta_operator: Assignment | Condition | Control;
 
@@ -758,7 +753,7 @@ boolean_assignment:
 control_statement:
 	primary_control_statement alternative_control_statement*;
 primary_control_statement:
-	'@' control_expression OpenSwirly boolean_assignment+ CloseSwirly;
+	AtSign control_expression OpenSwirly boolean_assignment+ CloseSwirly;
 alternative_control_statement:
 	Colon control_expression OpenSwirly boolean_assignment+ CloseSwirly;
 primitive_instantiation:

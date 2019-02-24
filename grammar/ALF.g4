@@ -64,10 +64,11 @@ VIOLATION: 'VIOLATION';
 
 fragment AToF: [ABCDEFabcdef];
 
+fragment Binary_digit: '0'|'1';
 fragment Octal_digit: [2-7];
 fragment Hexadecimal_digit: [2-9ABCDEFabcdef];
-Digit: [2-9];
-fragment Decimal_digits: '0'|'1'|Digit;
+fragment Decimal_digit: [2-9];
+Digit: Binary_digit|Decimal_digit;
 
 // See Syntax 1, 5.1
 alf_statement:
@@ -91,8 +92,6 @@ alf_value:
 	| boolean_expression
 	| control_expression
 	| Quoted_string
-	| '0'
-	| '1'
 	;
 
 // alf_statement_teralf_mination: ';' | '{' (alf_value | ':' | ';')* '}' | '{' alf_statement* '}';
@@ -104,7 +103,7 @@ alf_statement_termination:
 
 fragment Character: // See Syntax 2, 6.1
 	Letter
-	| Decimal_digits
+	| Digit
 	| Special
 	| Whitespace
 ;
@@ -190,14 +189,15 @@ Number:
 	| Unsigned_integer
 	| Unsigned_Real
 	; // See Syntax 6, 6.5
+
 //signed_number: Signed_integer | Signed_Real;
 unsigned_number: Unsigned_integer | Unsigned_Real;
 Integer: Signed_integer | Unsigned_integer;
 Signed_integer: Sign Unsigned_integer;
+
 Unsigned_integer:
-	Decimal_digits* Digit Decimal_digits* ('_'? Decimal_digits)*
-	| '0'
-	| '1'
+	Digit* Decimal_digit Digit* ('_'? Digit)*
+	| Binary_digit
 	;
 
 //Real: Signed_Real | Unsigned_Real;
@@ -206,9 +206,9 @@ Unsigned_Real: Mantissa Exponent? | Unsigned_integer Exponent;
 
 fragment Sign: [+-];
 fragment Mantissa:
-	'.' Decimal_digits+
-	| Decimal_digits+ '.' Decimal_digits*;
-fragment Exponent: [eE] Sign? Decimal_digits+;
+	'.' Digit+
+	| Digit+ '.' Digit*;
+fragment Exponent: [eE] Sign? Digit+;
 index_value:
 	Unsigned_integer
 	| Atomic_identifier
@@ -222,9 +222,8 @@ multi_index:
 
 multiplier_prefix_symbol:
 	(
-		//Unity
-		//|
-		Kilo
+		'1'
+		| Kilo
 		| Mega
 		| Giga
 		| Milli
@@ -234,7 +233,6 @@ multiplier_prefix_symbol:
 		| Femto
 	) Letter*; // See Syntax 9, 6.7
 
-//Unity: '1';
 Kilo: [Kk];
 Mega: [Mm] [Ee] [Gg];
 Milli: [Mm];
@@ -254,11 +252,20 @@ Bit_literal:
 	|'1'
 	| '?'
 	| '*'
+//	Alphanumeric_bit_literal
+//	| Symbolic_bit_literal
 	; // See Syntax 11, 6.8
 
-//[XZLHUWxzlhuw]
+Alphanumeric_bit_literal:
+	Numeric_bit_literal
+	|Alphabetic_bit_literal
+	;
 
-based_literal:
+Numeric_bit_literal: '0'|'1';
+Symbolic_bit_literal: '?'|'*';
+Alphabetic_bit_literal: [XZLHUWxzlhuw];
+
+Based_literal:
 	Binary_based_literal
 	| Octal_Based_literal
 	| Decimal_Based_literal
@@ -270,24 +277,24 @@ Binary_base: '\'' [Bb];
 Octal_Based_literal: Octal_base Octal_digit ('_'? Octal_digit)*;
 fragment Octal_base: '\'' [Oo];
 
-Decimal_Based_literal: Decimal_base Decimal_digits ('_'? Decimal_digits)*;
+Decimal_Based_literal: Decimal_base Digit ('_'? Digit)*;
 
 fragment Decimal_base: '\'' [Dd];
 Hexadecimal_Based_literal:
 	Hexadecimal_base Hexadecimal_digit ('_'? Hexadecimal_digit)*;
 fragment Hexadecimal_base: '\'' [Hh];
 
-boolean_value:
-	//alphanumeric_bit_literal
-	based_literal
-	| Integer; // See Syntax 13, 6.10
+Boolean_value:
+	Alphanumeric_bit_literal
+	| Based_literal
+	| Integer
+	; // See Syntax 13, 6.10
 
 arithmetic_value:
 	Number
 	| identifier
-	//| Bit_literal
 	| edge_literal
-	| based_literal
+	| Based_literal
 	| '0'
 	| '1'
 	; // See Syntax 14, 6.11
@@ -296,12 +303,12 @@ edge_literal: Bit_edge_literal | Symbolic_edge_literal;
 
 Bit_edge_literal: Bit_literal Bit_literal;
 
-based_edge_literal: based_literal based_literal;
+based_edge_literal: Based_literal Based_literal;
 Symbolic_edge_literal: '?~' | '?!' | '?-';
 edge_value: '(' edge_literal ')';
 
 identifier:
-	Atomic_identifier
+	 Atomic_identifier
 	| indexed_identifier
 	| hierarchical_identifier
 	| Escaped_identifier
@@ -317,13 +324,12 @@ hierarchical_identifier:
 	full_hierarchical_identifier
 	| partial_hierarchical_identifier;
 
-Non_escaped_identifier: Letter (Letter | Decimal_digits | '_' | '$' | '#')+;
+Non_escaped_identifier: Letter (Letter | Digit | '_' | '$' | '#')*;
 
 Placeholder_identifier:
 	'<' Non_escaped_identifier '>'; // See Syntax 19, 6.13.2
 
-indexed_identifier:
-	Atomic_identifier index; // See Syntax 20, 6.13.3
+indexed_identifier: Atomic_identifier index; // See Syntax 20, 6.13.3
 
 optional_indexed_identifier: Atomic_identifier index?;
 full_hierarchical_identifier:
@@ -344,7 +350,7 @@ partial_hierarchical_identifier:
 Escaped_identifier:
 	'\\' (Escapable_character)+ ; // See Syntax 23, 6.13.6
 
-Escapable_character: Letter | Decimal_digits | Special;
+Escapable_character: Letter | Digit | Special;
 
 keyword_identifier:
 	Letter ('_'? Letter)*; // See Syntax 24, 6.13.7
@@ -353,14 +359,11 @@ Quoted_string: '"' Character* '"'; // See Syntax 25, 6.14
 
 generic_value:
 	Number
-	| multiplier_prefix_symbol
+	//| multiplier_prefix_symbol
 	| identifier
 	| Quoted_string
-	//| Bit_literal
-	| based_literal
+	| Based_literal
 	//| edge_value
-	| '0'
-	| '1'
 	| Digit
 	; // See Syntax 27, 6.16
 
@@ -423,7 +426,7 @@ alias_declaration:
 	) ';'; // See Syntax 35, 7.7
 constant_declaration:
 	CONSTANT alf_id = identifier '=' value = constant_value ';'; // See Syntax 36, 7.8
-constant_value: Number | based_literal;
+constant_value: Number | Based_literal;
 
 keyword_declaration:
 	KEYWORD alf_id = keyword_identifier '=' target = identifier (
@@ -744,7 +747,9 @@ test_item: all_purpose_item | behavior | statetable;
 
 pin_value:
 	pin_variable = identifier
-	| boolean_value; // See Syntax 67, 9.3.1
+	| Boolean_value
+	; // See Syntax 67, 9.3.1
+
 pin_assignment:
 	pin_variable = identifier '=' value = pin_value ';'; // See Syntax 68, 9.3.2
 behavior:
@@ -785,11 +790,12 @@ statetable_header:
 statetable_row:
 	control_values += statetable_control_value+ ':' data_values += statetable_data_value+ ';';
 statetable_control_value:
-	boolean_value
-	| '?' | '*'
+	Boolean_value
+	| '?'
+	| '*'
 	| edge_value;
 statetable_data_value:
-	boolean_value
+	Boolean_value
 	| '(' ('!')? input_pin = identifier ')'
 	| '(' ('~')? input_pin = identifier ')';
 
@@ -808,7 +814,7 @@ alf_range:
 
 boolean_expression:
 	'(' inner = boolean_expression ')'
-	| val = boolean_value
+	| val = Boolean_value
 	| ref = identifier
 	| unary = boolean_unary_operator right = boolean_expression
 	| left = boolean_expression binary = boolean_binary_operator right = boolean_expression

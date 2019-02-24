@@ -64,6 +64,8 @@ SemiColon: ';' ;
 Colon: ':' ;
 OpenSwirly: '{' ;
 CloseSwirly: '}' ;
+OpenSquareBracket: '[';
+CloseSquareBracket: ']';
 
 fragment AToF: [ABCDEFabcdef];
 
@@ -123,7 +125,7 @@ Whitespace: ([ \t\u000B\r\f] | Newline)  -> channel (HIDDEN);
 
 Letter: [A-Za-z];
 
-fragment Special: [&|^~/%?!'\\$_#<>\-+];
+fragment Special: [&|^~/%?!'\\$_#\-+];
 
 In_line_comment: '//' Character* [\n\r] -> channel (HIDDEN);
 Block_comment: '/*' Character* '*/' -> channel (HIDDEN);
@@ -202,10 +204,7 @@ fragment Mantissa:
 	| Digit+ '.' Digit*;
 fragment Exponent: [eE] Sign? Digit+;
 
-index:
-	'[' alf_value ']'
-	| '[' alf_from_index = alf_value Colon until_index = alf_value ']'
-	; // See Syntax 8, 6.6
+index: OpenSquareBracket (a = alf_value) ( Colon b = alf_value )? CloseSquareBracket; // See Syntax 8, 6.6
 
 Bit_literal:
 	ZERO
@@ -270,34 +269,32 @@ Atomic_identifier:
 	| Placeholder_identifier
 	;
 
-hierarchical_identifier:
-	full_hierarchical_identifier
-	| partial_hierarchical_identifier;
+//hierarchical_identifier:
+//	full_hierarchical_identifier
+//	| partial_hierarchical_identifier;
 
+Placeholder_identifier: '<' Non_escaped_identifier '>'; // See Syntax 19, 6.13.2
 Non_escaped_identifier: Letter (Letter | Digit | '_' | '$' | '#')+;
 
-Placeholder_identifier:
-	'<' Non_escaped_identifier '>'; // See Syntax 19, 6.13.2
+//optional_indexed_identifier: Atomic_identifier index?;
 
-optional_indexed_identifier: Atomic_identifier index?;
+//full_hierarchical_identifier:
+//	alf_list += optional_indexed_identifier (
+//		'.' alf_list += optional_indexed_identifier
+//	)+
+//	; // See Syntax 21, 6.13.4
 
-full_hierarchical_identifier:
-	alf_list += optional_indexed_identifier (
-		'.' alf_list += optional_indexed_identifier
-	)+
-	; // See Syntax 21, 6.13.4
-
-partial_hierarchical_identifier:
-	(
-		from_list += optional_indexed_identifier (
-			'.' from_list += optional_indexed_identifier
-		)* '..'
-	)+ (
-		until_list += optional_indexed_identifier (
-			'.' until_list += optional_indexed_identifier
-		)*
-	)?
-	; // See Syntax 22, 6.13.5
+//partial_hierarchical_identifier:
+//	(
+//		from_list += optional_indexed_identifier (
+//			'.' from_list += optional_indexed_identifier
+//		)* '..'
+//	)+ (
+//		until_list += optional_indexed_identifier (
+//			'.' until_list += optional_indexed_identifier
+//		)*
+//	)?
+//	; // See Syntax 22, 6.13.5
 
 Escaped_identifier:
 	'\\' (Escapable_character)+ ; // See Syntax 23, 6.13.6
@@ -405,14 +402,17 @@ static_template_instantiation:
 		| OpenSwirly annotations += annotation* CloseSwirly
 	)
 	;
+
 dynamic_template_instantiation:
 	alf_id = identifier Assign 'dynamic' OpenSwirly items += dynamic_template_instantiation_item* CloseSwirly
 	;
+
 dynamic_template_instantiation_item:
 	annotation
 	| arithmetic_model
 	| arithmetic_assignment
 	;
+
 arithmetic_assignment:
 	identifier Assign arithmetic_expression SemiColon
 	;
@@ -468,20 +468,7 @@ sublibrary:
 	;
 
 sublibrary_item:
-	alias_declaration
-	| constant_declaration
-	| class_declaration
-	| keyword_declaration
-	| semantics_declaration
-	| group_declaration
-	| template_declaration
-	| include_statement
-	| associate_statement
-	| annotation
-	| annotation_container
-	| arithmetic_model
-	| arithmetic_model_container
-	| template_instantiation
+	all_purpose_item
 	| cell
 	| primitive
 	| wire
@@ -492,9 +479,6 @@ sublibrary_item:
 	| array
 	| site
 	| region
-	| alf_from_to
-	| header
-	| table
 	;
 
 cell:
@@ -888,38 +872,31 @@ arithmetic_model:
 	trivial_arithmetic_model
 	| partial_arithmetic_model
 	| full_arithmetic_model
-	| template_instantiation; // See Syntax 82, 10.3
+	//| template_instantiation
+	; // See Syntax 82, 10.3
 
-trivial_arithmetic_model:
-	  arithmetic_ref = identifier name = identifier Assign value = alf_value
-	| arithmetic_ref = identifier Assign value = alf_value OpenSwirly qualifiers += model_qualifier+ CloseSwirly
-	; // See Syntax 83, 10.3
-
-partial_arithmetic_model: arithmetic_ref = identifier name = identifier? OpenSwirly body += partial_arithmetic_model_item+ CloseSwirly; // See Syntax 84, 10.3
+trivial_arithmetic_model: arithmetic_ref = identifier ( name = identifier )? Assign ( value = alf_value ) ( OpenSwirly qualifiers += model_qualifier+                                                  CloseSwirly )? ; // See Syntax 83, 10.3
+partial_arithmetic_model: arithmetic_ref = identifier ( name = identifier )?                                OpenSwirly body += partial_arithmetic_model_item+                                          CloseSwirly    ; // See Syntax 84, 10.3
+full_arithmetic_model:    arithmetic_ref = identifier ( name = identifier )?                                OpenSwirly qualifiers += model_qualifier* body = model_body qualifiers += model_qualifier* CloseSwirly;
 
 partial_arithmetic_model_item:
-	//arithmetic_model_qualifier
 	model_qualifier
 	| table
 	| trivial_alf_min_alf_max
 	;
 
-full_arithmetic_model: arithmetic_ref = identifier name = identifier? OpenSwirly qualifiers += model_qualifier* body = model_body qualifiers += model_qualifier* CloseSwirly;
 
 // See Syntax 85, 10.3
 model_qualifier:
 	annotation
-	| annotation_container
-	| pin
-	| auxiliary_arithmetic_model
+	//| annotation_container
+	| PIN Assign identifier SemiColon
+	//| auxiliary_arithmetic_model
 	| violation
 	| alf_from_to
 	;
 
-auxiliary_arithmetic_model:  // See Syntax 95, 10.6
-	identifier Assign alf_value ( OpenSwirly auxiliary_qualifier* CloseSwirly |  SemiColon )
-	| identifier OpenSwirly auxiliary_qualifier* CloseSwirly
-	;
+auxiliary_arithmetic_model: identifier (Assign alf_value)? ( OpenSwirly auxiliary_qualifier* CloseSwirly |  SemiColon ); // See Syntax 95, 10.6
 
 auxiliary_qualifier:
 	annotation
@@ -927,10 +904,6 @@ auxiliary_qualifier:
 	| pin
 	| alf_from_to
 	;
-
-arithmetic_model_qualifier:
-	inheritable_arithmetic_model_qualifier
-	| non_inheritable_arithmetic_model_qualifier; // See Syntax 87, 10.3
 
 model_body:
 	header_table_equation trivial_alf_min_alf_max?
@@ -950,17 +923,18 @@ non_inheritable_arithmetic_model_qualifier:
 header_table_equation:
 	header (table | equation); // See Syntax 88, 10.4
 
-header: HEADER OpenSwirly header_arithmetic_model+ CloseSwirly; // See Syntax 89, 10.4
+//header: HEADER OpenSwirly header_arithmetic_model+ CloseSwirly; // See Syntax 89, 10.4
+header: HEADER OpenSwirly partial_arithmetic_model+ CloseSwirly; // See Syntax 89, 10.4
 
-header_arithmetic_model: ( arithmetic_ref = identifier ) ( name = identifier )? ( OpenSwirly body += header_arithmetic_model_item* CloseSwirly )?;
+//header_arithmetic_model: ( arithmetic_ref = identifier ) ( name = identifier )? ( OpenSwirly body += header_arithmetic_model_item* CloseSwirly )?;
 
-header_arithmetic_model_item:
-	inheritable_arithmetic_model_qualifier
-	| table
-	| trivial_alf_min_alf_max
-	| arithmetic_submodel
-	| pin
-	;
+//header_arithmetic_model_item:
+//	inheritable_arithmetic_model_qualifier
+//	| table
+//	| trivial_alf_min_alf_max
+//	| arithmetic_submodel
+//	| pin
+//	;
 
 equation:
 	EQUATION OpenSwirly arithmetic_expression CloseSwirly
@@ -1005,9 +979,10 @@ arithmetic_model_container:
 
 limit_arithmetic_model_container:
 	LIMIT OpenSwirly limit_arithmetic_model+ CloseSwirly; // See Syntax 98, 10.8.2
+
 limit_arithmetic_model:
-	arithmetic_ref = identifier name = identifier? OpenSwirly qualifiers += arithmetic_model_qualifier*
-		body = limit_arithmetic_model_body CloseSwirly;
+	arithmetic_ref = identifier name = identifier? OpenSwirly qualifiers += model_qualifier* body = limit_arithmetic_model_body CloseSwirly;
+
 limit_arithmetic_model_body:
 	submodels += limit_arithmetic_submodel+
 	| alf_min_alf_max;

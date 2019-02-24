@@ -104,7 +104,6 @@ alf_value:
 	| Quoted_string
 	;
 
-// alf_statement_teralf_mination: SemiColon | OpenSwirly (alf_value | Colon | SemiColon)* CloseSwirly | OpenSwirly alf_statement* CloseSwirly;
 alf_statement_termination:
 	SemiColon
 	| OpenSwirly ( alf_value | Colon | SemiColon )+ CloseSwirly
@@ -126,7 +125,6 @@ Letter: [A-Za-z];
 
 fragment Special: [&|^~/%?!'\\$_#<>\-+];
 
-// Comment: In_line_comment | Block_comment; // See Syntax 3, 6.2
 In_line_comment: '//' Character* [\n\r] -> channel (HIDDEN);
 Block_comment: '/*' Character* '*/' -> channel (HIDDEN);
 
@@ -143,8 +141,6 @@ Not: '~';
 LogicNot: '!';
 And: '&';
 Or: '|';
-
-// boolean_operator: LogicAnd | LogicOr | NotAnd | NotOr | Xor | NotXor | Not | LogicNot | And | Or;
 
 Equal: '==';
 NotEqual: '!=';
@@ -181,10 +177,6 @@ Event_operator:
 	| SimultaneousOrImmediatelyFollowingEachOther
 	;
 
-// Assignment: '='; Condition: '?'; Control: AtSign; 
-
-// meta_operator: Assignment | Condition | Control;
-
 Number:
 	Signed_integer
 	| Signed_Real
@@ -192,7 +184,6 @@ Number:
 	| Unsigned_Real
 	; // See Syntax 6, 6.5
 
-//signed_number: Signed_integer | Signed_Real;
 unsigned_number: Unsigned_integer | Unsigned_Real;
 Integer: Signed_integer | Unsigned_integer;
 Signed_integer: Sign Unsigned_integer;
@@ -202,7 +193,6 @@ Unsigned_integer:
 	| Binary_digit
 	;
 
-//Real: Signed_Real | Unsigned_Real;
 Signed_Real: Sign Unsigned_Real;
 Unsigned_Real: Mantissa Exponent? | Unsigned_integer Exponent;
 
@@ -222,33 +212,6 @@ index:
 	'[' index_value ']'
 	| '[' alf_from_index = index_value Colon until_index = index_value ']'
 	; // See Syntax 8, 6.6
-
-multiplier_prefix_symbol:
-	(
-		ONE
-		| Kilo
-		| Mega
-		| Giga
-		| Milli
-		| Micro
-		| Nano
-		| Pico
-		| Femto
-	) Letter*; // See Syntax 9, 6.7
-
-Kilo: [Kk];
-Mega: [Mm] [Ee] [Gg];
-Milli: [Mm];
-Giga: [Gg];
-Micro: [Uu];
-Nano: [Nn];
-Pico: [Pp];
-Femto: [Ff];
-
-multiplier_prefix_value:
-	unsigned_number
-	| multiplier_prefix_symbol
-	; // See Syntax 10, 6.7
 
 Bit_literal:
 	ZERO
@@ -844,7 +807,6 @@ vector_expression:
 	; // See Syntax 75, 9.12
 
 single_event: edge_literal boolean_expression;
-//single_event: Number boolean_expression;
 
 vector_operator: Event_operator | Event_and | Event_or;
 Event_and: And | LogicAnd;

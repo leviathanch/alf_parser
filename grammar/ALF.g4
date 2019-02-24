@@ -545,11 +545,7 @@ pin: // See Syntax 49, 8.6
 		SemiColon
 		| OpenSwirly scalar_pin_item* CloseSwirly
 	)
-	| PIN pin_index = index alf_id = identifier (
-		SemiColon
-		| OpenSwirly vector_pin_item* CloseSwirly
-	)
-	| PIN first = index alf_id = identifier second = index (
+	| PIN first = index alf_id = identifier (second = index)? (
 		SemiColon
 		| OpenSwirly vector_pin_item* CloseSwirly
 	)

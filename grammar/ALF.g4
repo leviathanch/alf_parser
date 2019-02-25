@@ -83,15 +83,7 @@ fragment Decimal_digit: [2-9];
 fragment Digit: Decimal_digit|ZERO|ONE;
 
 // See Syntax 1, 5.1
-alf_statement:
-	alf_type alf_name? (Assign alf_value)? alf_statement_termination
-	| alf_from_to
-	| header
-	| table
-	| pin
-	| equation
-	| cell
-	;
+//alf_statement: alf_type alf_name? (Assign alf_value)? alf_statement_termination;
 
 alf_type: identifier | AtSign | Colon;
 
@@ -105,11 +97,11 @@ alf_value:
 	| Quoted_string
 	;
 
-alf_statement_termination:
-	SemiColon
-	| OpenSwirly ( alf_value | Colon | SemiColon )+ CloseSwirly
-	| OpenSwirly alf_statement+ CloseSwirly
-	;
+//alf_statement_termination:
+//	SemiColon
+//	| OpenSwirly ( alf_value | Colon | SemiColon )+ CloseSwirly
+//	| OpenSwirly alf_statement+ CloseSwirly
+//	;
 
 fragment Newline: '\n';
 
@@ -203,8 +195,6 @@ fragment Mantissa:
 	| Digit+ '.' Digit*;
 fragment Exponent: [eE] Sign? Digit+;
 
-index: OpenSquareBracket (a = alf_value) ( Colon ( b = alf_value ) )? CloseSquareBracket; // See Syntax 8, 6.6
-
 Bit_literal:
 	ZERO
 	|ONE
@@ -255,6 +245,11 @@ Bit_edge_literal: Bit_literal Bit_literal;
 based_edge_literal: Based_literal Based_literal;
 Symbolic_edge_literal: '?~' | '?!' | '?-';
 edge_value: '(' edge_literal ')';
+
+
+//index: OpenSquareBracket (Atomic_identifier|Number) ( Colon (Atomic_identifier|Number) )? CloseSquareBracket; // See Syntax 8, 6.6
+
+index: OpenSquareBracket (a = (Atomic_identifier|Number)) ( Colon ( b = (Atomic_identifier|Number) ) )? CloseSquareBracket; // See Syntax 8, 6.6
 
 identifier:
 	Atomic_identifier index? // See Syntax 20, 6.13.3
@@ -393,7 +388,8 @@ group_declaration:
 		| OpenSwirly left = alf_value Colon right = alf_value CloseSwirly
 	); // See Syntax 40, 7.14
 
-template_declaration: TEMPLATE alf_id = identifier OpenSwirly statements += alf_statement* CloseSwirly; // See Syntax 41, 7.15
+// template_declaration: TEMPLATE alf_id = identifier OpenSwirly statements += alf_statement* CloseSwirly; // See Syntax 41, 7.15
+template_declaration: TEMPLATE alf_id = identifier OpenSwirly statements += sublibrary_item* CloseSwirly; // See Syntax 41, 7.15
 
 // ------- See Syntax 42, 7.16
 template_instantiation:
@@ -921,20 +917,10 @@ auxiliary_qualifier:
 model_body:
 	header_table_equation trivial_alf_min_alf_max?
 	| alf_min_typ_alf_max
-	| arithmetic_submodel+; // See Syntax 86, 10.3
+	| arithmetic_submodel+
+	; // See Syntax 86, 10.3
 
-inheritable_arithmetic_model_qualifier:
-	annotation
-	| annotation_container
-	;
-
-non_inheritable_arithmetic_model_qualifier:
-	auxiliary_arithmetic_model
-	| violation
-	;
-
-header_table_equation:
-	header (table | equation); // See Syntax 88, 10.4
+header_table_equation: header (table | equation); // See Syntax 88, 10.4
 
 //header: HEADER OpenSwirly header_arithmetic_model+ CloseSwirly; // See Syntax 89, 10.4
 header: HEADER OpenSwirly partial_arithmetic_model+ CloseSwirly; // See Syntax 89, 10.4

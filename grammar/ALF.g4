@@ -249,7 +249,7 @@ edge_value: '(' edge_literal ')';
 
 //index: OpenSquareBracket (Atomic_identifier|Number) ( Colon (Atomic_identifier|Number) )? CloseSquareBracket; // See Syntax 8, 6.6
 
-index: OpenSquareBracket (a = (Atomic_identifier|Number)) ( Colon ( b = (Atomic_identifier|Number) ) )? CloseSquareBracket; // See Syntax 8, 6.6
+index: OpenSquareBracket ( a = ( Atomic_identifier | Number ) ) ( Colon ( b = ( Atomic_identifier | Number ) ) )? CloseSquareBracket; // See Syntax 8, 6.6
 
 identifier:
 	Atomic_identifier index? // See Syntax 20, 6.13.3
@@ -396,8 +396,9 @@ template_instantiation:
 	static_template_instantiation
 	| dynamic_template_instantiation
 	;
+
 static_template_instantiation:
-	alf_id = identifier (Assign 'static')? (
+	alf_id = identifier Assign 'static' (
 		SemiColon
 		| OpenSwirly values += alf_value* CloseSwirly
 		| OpenSwirly annotations += annotation* CloseSwirly
@@ -409,9 +410,9 @@ dynamic_template_instantiation:
 	;
 
 dynamic_template_instantiation_item:
-	annotation
-	| arithmetic_model
-	| arithmetic_assignment
+	annotation |
+	arithmetic_model |
+	arithmetic_assignment
 	;
 
 arithmetic_assignment:
@@ -949,20 +950,18 @@ alf_max: trivial_alf_max | non_trivial_alf_max;
 typ: trivial_typ | non_trivial_typ;
 non_trivial_alf_min:
 	MIN Assign val = alf_value OpenSwirly violations = violation CloseSwirly
-	| MIN OpenSwirly violations = violation? table_equation = header_table_equation CloseSwirly;
+	| MIN OpenSwirly violations = violation? table_equation = header_table_equation CloseSwirly
+	;
+
 // See Syntax 93, 10.5
+
 non_trivial_alf_max:
 	MAX Assign val = alf_value OpenSwirly violations = violation CloseSwirly
-	| MAX OpenSwirly violations = violation? table_equation = header_table_equation CloseSwirly;
-non_trivial_typ:
-	TYP OpenSwirly table_equation = header_table_equation CloseSwirly;
+	| MAX OpenSwirly violations = violation? table_equation = header_table_equation CloseSwirly
+	;
 
-trivial_alf_min_alf_max:
-	trivial_alf_min
-	| trivial_alf_max
-	| trivial_alf_min trivial_alf_max
-	; // See Syntax 94, 10.5
-
+non_trivial_typ: TYP OpenSwirly table_equation = header_table_equation CloseSwirly;
+trivial_alf_min_alf_max: ( trivial_alf_min | trivial_alf_max ) ( trivial_alf_min | trivial_alf_max )?; // See Syntax 94, 10.5
 trivial_alf_min: MIN Assign val = alf_value SemiColon;
 trivial_alf_max: MAX Assign val = alf_value SemiColon;
 trivial_typ: TYP Assign val = alf_value SemiColon;

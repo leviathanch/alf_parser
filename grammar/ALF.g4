@@ -74,7 +74,6 @@ Minus: '-';
 AtSign: '@';
 Assign: '=';
 
-
 fragment ZERO: '0';
 fragment ONE: '1';
 fragment Binary_digit: ZERO|ONE;
@@ -112,13 +111,6 @@ alf_statement_termination:
 	| OpenSwirly alf_statement+ CloseSwirly
 	;
 
-fragment Character: // See Syntax 2, 6.1
-	Letter
-	| Digit
-	| Special
-	| Whitespace
-;
-
 fragment Newline: '\n';
 
 Whitespace: ([ \t\u000B\r\f] | Newline)  -> channel (HIDDEN);
@@ -127,8 +119,15 @@ Letter: [A-Za-z];
 
 fragment Special: [&|^~/%?!'\\$_#\-+];
 
-In_line_comment: '//' Character* [\n\r] -> channel (HIDDEN);
-Block_comment: '/*' Character* '*/' -> channel (HIDDEN);
+fragment Comment_character: // See Syntax 2, 6.1
+	Letter
+	| Digit
+	| Special
+	| Whitespace
+;
+
+In_line_comment: '//' Comment_character* [\n\r] -> channel (HIDDEN);
+Block_comment: '/*' Comment_character* '*/' -> channel (HIDDEN);
 
 unary_operator: Plus | Minus;
 arithmetic_operator: unary_operator | '*' | '/' | '%' | '**';
@@ -204,7 +203,7 @@ fragment Mantissa:
 	| Digit+ '.' Digit*;
 fragment Exponent: [eE] Sign? Digit+;
 
-index: OpenSquareBracket (a = alf_value) ( Colon b = alf_value )? CloseSquareBracket; // See Syntax 8, 6.6
+index: OpenSquareBracket (a = alf_value) ( Colon ( b = alf_value ) )? CloseSquareBracket; // See Syntax 8, 6.6
 
 Bit_literal:
 	ZERO
@@ -297,14 +296,16 @@ Non_escaped_identifier: Letter (Letter | Digit | '_' | '$' | '#')+;
 //	; // See Syntax 22, 6.13.5
 
 Escaped_identifier:
-	'\\' (Escapable_character)+ ; // See Syntax 23, 6.13.6
+	'\\' Escapable_character+ ; // See Syntax 23, 6.13.6
 
-Escapable_character: Letter | Digit | Special;
+fragment Escapable_character: Letter | Digit | Special;
 
 keyword_identifier:
 	Letter ('_'? Letter)*; // See Syntax 24, 6.13.7
 
-Quoted_string: '"' Character* '"'; // See Syntax 25, 6.14
+Quoted_string: '"' Quotable_character+ '"'; // See Syntax 25, 6.14
+
+fragment Quotable_character: Letter | Digit | Special | Whitespace;
 
 vector_expression_macro:
 	'#.' Non_escaped_identifier; // See Syntax 28, 6.17

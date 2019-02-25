@@ -309,7 +309,7 @@ Quoted_string: '"' Character* '"'; // See Syntax 25, 6.14
 vector_expression_macro:
 	'#.' Non_escaped_identifier; // See Syntax 28, 6.17
 
-all_purpose_item: 
+generic_object:
 	alias_declaration
 	| constant_declaration
 	| class_declaration
@@ -317,6 +317,10 @@ all_purpose_item:
 	| semantics_declaration
 	| group_declaration
 	| template_declaration
+	;
+
+all_purpose_item: 
+	generic_object
 	| include_statement
 	| associate_statement
 	| annotation
@@ -349,7 +353,8 @@ alias_declaration:
 	ALIAS (
 		alf_id = identifier Assign original = identifier
 		| macro = vector_expression_macro Assign '(' expression = vector_expression ')'
-	) SemiColon; // See Syntax 35, 7.7
+	) SemiColon;
+	// See Syntax 35, 7.7
 
 constant_declaration: CONSTANT alf_id = identifier Assign value = constant_value SemiColon; // See Syntax 36, 7.8
 
@@ -482,7 +487,7 @@ sublibrary_item:
 
 cell:
 	CELL alf_id = identifier (SemiColon | OpenSwirly body += cell_item* CloseSwirly)
-	| cell_template = template_instantiation
+	//| cell_template = template_instantiation
 	; // See Syntax 48, 8.4
 
 cell_item:
@@ -530,7 +535,7 @@ primitive:
 		SemiColon
 		| OpenSwirly body += primitive_item* CloseSwirly
 	)
-	| template_instantiation
+	//| template_instantiation
 	; // See Syntax 51, 8.9
 
 primitive_item:
@@ -543,7 +548,7 @@ primitive_item:
 
 wire:
 	'WIRE' alf_id = identifier (SemiColon | OpenSwirly body += wire_item* CloseSwirly)
-	| template_instantiation
+	//| template_instantiation
 	; // See Syntax 52, 8.10
 
 wire_item: all_purpose_item | node;
@@ -574,29 +579,38 @@ vector_item:
 
 layer:
 	LAYER alf_id = identifier (SemiColon | OpenSwirly body += layer_item* CloseSwirly)
-	| template_instantiation; // See Syntax 55, 8.16
+	//| template_instantiation
+	; // See Syntax 55, 8.16
+
 layer_item: all_purpose_item;
 
 via:
 	VIA alf_id = identifier (SemiColon | OpenSwirly body += via_item* CloseSwirly)
-	| template_instantiation; // See Syntax 56, 8.18
+	//| template_instantiation
+	; // See Syntax 56, 8.18
+
 via_item: all_purpose_item | pattern | artwork;
 
 alf_rule:
 	RULE alf_id = identifier (SemiColon | OpenSwirly body += rule_item* CloseSwirly)
-	| template_instantiation; // See Syntax 57, 8.20
+	//| template_instantiation
+	; // See Syntax 57, 8.20
+
 rule_item:
 	all_purpose_item
 	| pattern
 	| region
-	| via_instantiation;
+	| via_instantiation
+	;
 
 antenna:
 	ANTENNA alf_id = identifier (
 		SemiColon
 		| OpenSwirly body += antenna_item* CloseSwirly
 	)
-	| template_instantiation; // See Syntax 58, 8.21
+	//| template_instantiation
+	; // See Syntax 58, 8.21
+
 antenna_item: all_purpose_item | region;
 
 blockage:
@@ -604,13 +618,16 @@ blockage:
 		SemiColon
 		| OpenSwirly body += blockage_item* CloseSwirly
 	)
-	| template_instantiation; // See Syntax 59, 8.22
+	| template_instantiation
+	; // See Syntax 59, 8.22
+
 blockage_item:
 	all_purpose_item
 	| pattern
 	| region
 	| alf_rule
-	| via_instantiation;
+	| via_instantiation
+	;
 
 port:
 	'PORT' alf_id = identifier (SemiColon | OpenSwirly body += port_item* CloseSwirly)
@@ -622,19 +639,25 @@ port_item:
 	| pattern
 	| region
 	| alf_rule
-	| via_instantiation;
+	| via_instantiation
+	;
 
 site:
 	SITE alf_id = identifier (SemiColon | OpenSwirly body += site_item* CloseSwirly)
-	| template_instantiation; // See Syntax 61, 8.25
+	//| template_instantiation
+	; // See Syntax 61, 8.25
+
 site_item:
 	all_purpose_item
 	| width = arithmetic_model
-	| height = arithmetic_model;
+	| height = arithmetic_model
+	;
 
 array:
 	ARRAY alf_id = identifier (SemiColon | OpenSwirly body += array_item* CloseSwirly)
-	| template_instantiation; // See Syntax 62, 8.27
+	//| template_instantiation
+	; // See Syntax 62, 8.27
+
 array_item: all_purpose_item | geometric_transformation;
 
 pattern:
@@ -652,15 +675,20 @@ pattern_item:
 
 region:
 	REGION alf_id = identifier (SemiColon | OpenSwirly body += region_item* CloseSwirly)
-	| template_instantiation; // See Syntax 64, 8.31
+	//| template_instantiation
+	; // See Syntax 64, 8.31
+
 region_item:
 	all_purpose_item
 	| geometric_model
 	| geometric_transformation
 	| boolean_ = single_value_annotation;
+
 function:
 	FUNCTION OpenSwirly body += function_item+ CloseSwirly
-	| template_instantiation; // See Syntax 65, 9.1
+	| template_instantiation
+	; // See Syntax 65, 9.1
+
 function_item:
 	all_purpose_item
 	| behavior
@@ -669,7 +697,9 @@ function_item:
 
 test:
 	TEST OpenSwirly body += test_item+ CloseSwirly
-	| template_instantiation; // See Syntax 66, 9.2
+	| template_instantiation
+	; // See Syntax 66, 9.2
+
 test_item: all_purpose_item | behavior | statetable;
 
 pin_value:
@@ -681,26 +711,33 @@ pin_assignment:
 	pin_variable = identifier Assign value = pin_value SemiColon; // See Syntax 68, 9.3.2
 behavior:
 	BEHAVIOR OpenSwirly behavior_item+ CloseSwirly
-	| template_instantiation; // See Syntax 69, 9.4
+	| template_instantiation
+	; // See Syntax 69, 9.4
+
 behavior_item:
 	boolean_assignment
 	| control_statement
 	| primitive_instantiation
-	| template_instantiation;
-boolean_assignment:
-	pin_variable = identifier Assign boolean_expression SemiColon;
-control_statement:
-	primary_control_statement alternative_control_statement*;
-primary_control_statement:
-	AtSign control_expression OpenSwirly boolean_assignment+ CloseSwirly;
-alternative_control_statement:
-	Colon control_expression OpenSwirly boolean_assignment+ CloseSwirly;
+	| template_instantiation
+	;
+
+boolean_assignment: pin_variable = identifier Assign boolean_expression SemiColon;
+
+control_statement: primary_control_statement alternative_control_statement*;
+
+primary_control_statement: AtSign control_expression OpenSwirly boolean_assignment+ CloseSwirly;
+
+alternative_control_statement: Colon control_expression OpenSwirly boolean_assignment+ CloseSwirly;
+
 primitive_instantiation:
 	identifier identifier? OpenSwirly pin_value+ CloseSwirly
-	| identifier identifier? OpenSwirly boolean_assignment+ CloseSwirly;
+	| identifier identifier? OpenSwirly boolean_assignment+ CloseSwirly
+	;
+
 structure:
 	STRUCTURE OpenSwirly cell_instantiation+ CloseSwirly
-	| template_instantiation; // See Syntax 70, 9.5
+	| template_instantiation
+	; // See Syntax 70, 9.5
 
 cell_reference_identifier: identifier;
 
@@ -715,8 +752,8 @@ cell_instance_pin_assignment: pin_variable = identifier Assign pin_value SemiCol
 
 statetable:
 	STATETABLE alf_id = identifier? OpenSwirly tableheader = statetable_header rows += statetable_row+ CloseSwirly
-	| template_instantiation;
-	// See Syntax 71, 9.6
+	| template_instantiation
+	; // See Syntax 71, 9.6
 
 statetable_header: inputs += identifier+ Colon outputs += identifier+ SemiColon;
 statetable_row: control_values += statetable_control_value+ Colon data_values += statetable_data_value+ SemiColon;
@@ -736,8 +773,8 @@ statetable_data_value:
 non_scan_cell:
 	NON_SCAN_CELL Assign references += non_scan_cell_reference SemiColon
 	| NON_SCAN_CELL OpenSwirly references += non_scan_cell_reference+ CloseSwirly
-	| template_instantiation;
-	// See Syntax 72, 9.7
+	| template_instantiation
+	; // See Syntax 72, 9.7
 
 non_scan_cell_reference:
 	alf_id = identifier OpenSwirly scan_cell_pins += identifier CloseSwirly
@@ -816,10 +853,13 @@ wire_instance_pin_assignment:
 
 geometric_model:
 	Non_escaped_identifier alf_id = identifier? OpenSwirly body += geometric_model_item+ CloseSwirly
-	| template_instantiation; // See Syntax 77, 9.16
+	| template_instantiation
+	; // See Syntax 77, 9.16
+
 geometric_model_item:
 	point_to_point = single_value_annotation
-	| coordinates;
+	| coordinates
+	;
 
 coordinates: COORDINATES OpenSwirly points += point+ CloseSwirly;
 
@@ -842,7 +882,8 @@ artwork:
 		| Assign references += artwork_reference
 		| OpenSwirly references += artwork_reference+ CloseSwirly
 	)
-	| template_instantiation; // See Syntax 79, 9.19
+	| template_instantiation
+	; // See Syntax 79, 9.19
 
 artwork_reference:
 	alf_id = identifier OpenSwirly transforms += geometric_transformation* (
@@ -851,7 +892,9 @@ artwork_reference:
 			artwork_pin += identifier Assign cell_pins += identifier SemiColon
 		)*
 	) CloseSwirly;
+
 instance_identifier: identifier;
+
 via_instantiation:
 	alf_id = identifier instance = identifier (
 		SemiColon
@@ -944,7 +987,8 @@ header: HEADER OpenSwirly partial_arithmetic_model+ CloseSwirly; // See Syntax 8
 
 equation:
 	EQUATION OpenSwirly arithmetic_expression CloseSwirly
-	| template_instantiation; // See Syntax 90, 10.4
+	| template_instantiation
+	; // See Syntax 90, 10.4
 
 table: 'TABLE' OpenSwirly ( ret += alf_value* ) CloseSwirly;
 
@@ -981,7 +1025,8 @@ arithmetic_submodel:
 		| OpenSwirly header_table_equation ( trivial_alf_min_alf_max)? CloseSwirly
 		| OpenSwirly alf_min_typ_alf_max CloseSwirly
 	)
-	| template_instantiation; // See Syntax 96, 10.7
+	| template_instantiation
+	; // See Syntax 96, 10.7
 
 arithmetic_model_container:
 	limit_arithmetic_model_container

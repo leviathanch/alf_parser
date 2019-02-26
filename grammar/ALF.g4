@@ -420,7 +420,8 @@ library:
 		SemiColon
 		| OpenSwirly body += library_item* CloseSwirly
 	)
-	| library_template = template_instantiation; // See Syntax 47, 8.2
+	//| library_template = template_instantiation
+	; // See Syntax 47, 8.2
 
 library_item: sublibrary | sublibrary_item;
 

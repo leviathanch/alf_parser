@@ -83,8 +83,6 @@ fragment Decimal_digit: [2-9];
 fragment Digit: Decimal_digit|ZERO|ONE;
 
 // See Syntax 1, 5.1
-//alf_statement: alf_type alf_name? (Assign alf_value)? alf_statement_termination;
-
 alf_type: identifier | AtSign | Colon;
 
 alf_name: identifier | control_expression;
@@ -96,12 +94,6 @@ alf_value:
 	| control_expression
 	| Quoted_string
 	;
-
-//alf_statement_termination:
-//	SemiColon
-//	| OpenSwirly ( alf_value | Colon | SemiColon )+ CloseSwirly
-//	| OpenSwirly alf_statement+ CloseSwirly
-//	;
 
 fragment Newline: '\n';
 
@@ -243,11 +235,10 @@ edge_literal: Bit_edge_literal | Symbolic_edge_literal;
 Bit_edge_literal: Bit_literal Bit_literal;
 
 based_edge_literal: Based_literal Based_literal;
+
 Symbolic_edge_literal: '?~' | '?!' | '?-';
+
 edge_value: '(' edge_literal ')';
-
-
-//index: OpenSquareBracket (Atomic_identifier|Number) ( Colon (Atomic_identifier|Number) )? CloseSquareBracket; // See Syntax 8, 6.6
 
 index: OpenSquareBracket ( a = ( Atomic_identifier | Number ) ) ( Colon ( b = ( Atomic_identifier | Number ) ) )? CloseSquareBracket; // See Syntax 8, 6.6
 
@@ -263,47 +254,21 @@ Atomic_identifier:
 	| Placeholder_identifier
 	;
 
-//hierarchical_identifier:
-//	full_hierarchical_identifier
-//	| partial_hierarchical_identifier;
-
 Placeholder_identifier: '<' Non_escaped_identifier '>'; // See Syntax 19, 6.13.2
+
 Non_escaped_identifier: Letter (Letter | Digit | '_' | '$' | '#')+;
 
-//optional_indexed_identifier: Atomic_identifier index?;
-
-//full_hierarchical_identifier:
-//	alf_list += optional_indexed_identifier (
-//		'.' alf_list += optional_indexed_identifier
-//	)+
-//	; // See Syntax 21, 6.13.4
-
-//partial_hierarchical_identifier:
-//	(
-//		from_list += optional_indexed_identifier (
-//			'.' from_list += optional_indexed_identifier
-//		)* '..'
-//	)+ (
-//		until_list += optional_indexed_identifier (
-//			'.' until_list += optional_indexed_identifier
-//		)*
-//	)?
-//	; // See Syntax 22, 6.13.5
-
-Escaped_identifier:
-	'\\' Escapable_character+ ; // See Syntax 23, 6.13.6
+Escaped_identifier: '\\' Escapable_character+ ; // See Syntax 23, 6.13.6
 
 fragment Escapable_character: Letter | Digit | Special;
 
-keyword_identifier:
-	Letter ('_'? Letter)*; // See Syntax 24, 6.13.7
+keyword_identifier: Letter ('_'? Letter)*; // See Syntax 24, 6.13.7
 
 Quoted_string: '"' Quotable_character+ '"'; // See Syntax 25, 6.14
 
 fragment Quotable_character: Letter | Digit | Special | Whitespace;
 
-vector_expression_macro:
-	'#.' Non_escaped_identifier; // See Syntax 28, 6.17
+vector_expression_macro: '#.' Non_escaped_identifier; // See Syntax 28, 6.17
 
 generic_object:
 	alias_declaration
@@ -340,10 +305,9 @@ annotation_container:
 	| alf_id = identifier name = identifier OpenSwirly annotations += annotation+ CloseSwirly
 	;  // See Syntax 32, 7.4
 
-attribute:
-	ATTRIBUTE OpenSwirly attributes += identifier+ CloseSwirly; // See Syntax 33, 7.5
-alf_property:
-	PROPERTY alf_id = identifier? OpenSwirly annotations += annotation+ CloseSwirly; // See Syntax 34, 7.6
+attribute: ATTRIBUTE OpenSwirly attributes += identifier+ CloseSwirly; // See Syntax 33, 7.5
+
+alf_property: PROPERTY alf_id = identifier? OpenSwirly annotations += annotation+ CloseSwirly; // See Syntax 34, 7.6
 
 alias_declaration:
 	ALIAS (
@@ -367,20 +331,23 @@ semantics_declaration:
 		Assign syntax_item = identifier SemiColon
 		| (Assign syntax_item = identifier)? OpenSwirly semantics += semantics_item* CloseSwirly
 	); // See Syntax 38, 7.10
+
 semantics_item:
 	annotation
 	| valuetype = single_value_annotation
 	| values = multi_value_annotation
 	| referencetype = annotation
 	| default_ = single_value_annotation
-	| si_model = single_value_annotation;
+	| si_model = single_value_annotation
+	;
 
-class_declaration:
-	CLASS alf_id = identifier (SemiColon | OpenSwirly body += class_item* CloseSwirly); // See Syntax 39, 7.12
+class_declaration: CLASS alf_id = identifier (SemiColon | OpenSwirly body += class_item* CloseSwirly); // See Syntax 39, 7.12
+
 class_item:
 	all_purpose_item
 	| geometric_model
-	| geometric_transformation;
+	| geometric_transformation
+	;
 
 group_declaration:
 	GROUP alf_id = identifier (
@@ -388,7 +355,6 @@ group_declaration:
 		| OpenSwirly left = alf_value Colon right = alf_value CloseSwirly
 	); // See Syntax 40, 7.14
 
-// template_declaration: TEMPLATE alf_id = identifier OpenSwirly statements += alf_statement* CloseSwirly; // See Syntax 41, 7.15
 template_declaration: TEMPLATE alf_id = identifier OpenSwirly statements += sublibrary_item* CloseSwirly; // See Syntax 41, 7.15
 
 // ------- See Syntax 42, 7.16
@@ -402,27 +368,22 @@ static_template_instantiation:
 		SemiColon
 		| OpenSwirly values += alf_value* CloseSwirly
 		| OpenSwirly annotations += annotation* CloseSwirly
-	)
-	;
+	)	;
 
-dynamic_template_instantiation:
-	alf_id = identifier Assign 'dynamic' OpenSwirly items += dynamic_template_instantiation_item* CloseSwirly
-	;
+dynamic_template_instantiation: alf_id = identifier Assign 'dynamic' OpenSwirly items += dynamic_template_instantiation_item* CloseSwirly;
 
 dynamic_template_instantiation_item:
-	annotation |
-	arithmetic_model |
-	arithmetic_assignment
+	annotation
+	| arithmetic_model
+	| arithmetic_assignment
 	;
 
-arithmetic_assignment:
-	identifier Assign arithmetic_expression SemiColon
-	;
+arithmetic_assignment: identifier Assign arithmetic_expression SemiColon;
+
 // -------
 
 
-include_statement:
-	INCLUDE target = Quoted_string SemiColon; // See Syntax 43, 7.17
+include_statement: INCLUDE target = Quoted_string SemiColon; // See Syntax 43, 7.17
 
 associate_statement:
 	ASSOCIATE target = Quoted_string (
@@ -483,10 +444,7 @@ sublibrary_item:
 	| region
 	;
 
-cell:
-	CELL alf_id = identifier ( SemiColon | OpenSwirly body += cell_item* CloseSwirly )
-	//| cell_template = template_instantiation
-	; // See Syntax 48, 8.4
+cell: CELL alf_id = identifier ( SemiColon | OpenSwirly body += cell_item* CloseSwirly ); // See Syntax 48, 8.4
 
 cell_item:
 	all_purpose_item
@@ -517,6 +475,7 @@ pin: // See Syntax 49, 8.6
 	; 
 
 scalar_pin_item: all_purpose_item | pattern | port;
+
 vector_pin_item: all_purpose_item | alf_range;
 
 pingroup:
@@ -541,15 +500,11 @@ primitive_item:
 	| test
 	;
 
-wire:
-	'WIRE' alf_id = identifier (SemiColon | OpenSwirly body += wire_item* CloseSwirly)
-	; // See Syntax 52, 8.10
+wire: 'WIRE' alf_id = identifier (SemiColon | OpenSwirly body += wire_item* CloseSwirly); // See Syntax 52, 8.10
 
 wire_item: all_purpose_item | node;
 
-node:
-	'NODE' alf_id = identifier (SemiColon | OpenSwirly body += node_item* CloseSwirly)
-	; // See Syntax 53, 8.12
+node: 'NODE' alf_id = identifier (SemiColon | OpenSwirly body += node_item* CloseSwirly); // See Syntax 53, 8.12
 
 node_item: all_purpose_item;
 
@@ -560,21 +515,15 @@ vector:
 	)
 	; // See Syntax 54, 8.14
 
-layer:
-	LAYER alf_id = identifier (SemiColon | OpenSwirly body += layer_item* CloseSwirly)
-	; // See Syntax 55, 8.16
+layer: LAYER alf_id = identifier (SemiColon | OpenSwirly body += layer_item* CloseSwirly); // See Syntax 55, 8.16
 
 layer_item: all_purpose_item;
 
-via:
-	VIA alf_id = identifier (SemiColon | OpenSwirly body += via_item* CloseSwirly)
-	; // See Syntax 56, 8.18
+via: VIA alf_id = identifier (SemiColon | OpenSwirly body += via_item* CloseSwirly); // See Syntax 56, 8.18
 
 via_item: all_purpose_item | pattern | artwork;
 
-alf_rule:
-	RULE alf_id = identifier (SemiColon | OpenSwirly body += rule_item* CloseSwirly)
-	; // See Syntax 57, 8.20
+alf_rule: RULE alf_id = identifier (SemiColon | OpenSwirly body += rule_item* CloseSwirly); // See Syntax 57, 8.20
 
 rule_item:
 	all_purpose_item
@@ -607,9 +556,7 @@ blockage_item:
 	| via_instantiation
 	;
 
-port:
-	'PORT' alf_id = identifier (SemiColon | OpenSwirly body += port_item* CloseSwirly)
-	; // See Syntax 60, 8.23
+port: 'PORT' alf_id = identifier (SemiColon | OpenSwirly body += port_item* CloseSwirly); // See Syntax 60, 8.23
 
 port_item:
 	all_purpose_item
@@ -619,9 +566,7 @@ port_item:
 	| via_instantiation
 	;
 
-site:
-	SITE alf_id = identifier (SemiColon | OpenSwirly body += site_item* CloseSwirly)
-	; // See Syntax 61, 8.25
+site: SITE alf_id = identifier (SemiColon | OpenSwirly body += site_item* CloseSwirly); // See Syntax 61, 8.25
 
 site_item:
 	all_purpose_item
@@ -629,9 +574,7 @@ site_item:
 	| height = arithmetic_model
 	;
 
-array:
-	ARRAY alf_id = identifier (SemiColon | OpenSwirly body += array_item* CloseSwirly)
-	; // See Syntax 62, 8.27
+array: ARRAY alf_id = identifier (SemiColon | OpenSwirly body += array_item* CloseSwirly); // See Syntax 62, 8.27
 
 array_item: all_purpose_item | geometric_transformation;
 
@@ -645,21 +588,19 @@ pattern:
 pattern_item:
 	all_purpose_item
 	| geometric_model
-	| geometric_transformation;
+	| geometric_transformation
+	;
 
-region:
-	REGION alf_id = identifier (SemiColon | OpenSwirly body += region_item* CloseSwirly)
-	; // See Syntax 64, 8.31
+region: REGION alf_id = identifier (SemiColon | OpenSwirly body += region_item* CloseSwirly); // See Syntax 64, 8.31
 
 region_item:
 	all_purpose_item
 	| geometric_model
 	| geometric_transformation
-	| boolean_ = single_value_annotation;
+	| boolean_ = single_value_annotation
+	;
 
-function:
-	FUNCTION OpenSwirly body += function_item+ CloseSwirly
-	; // See Syntax 65, 9.1
+function: FUNCTION OpenSwirly body += function_item+ CloseSwirly; // See Syntax 65, 9.1
 
 function_item:
 	all_purpose_item
@@ -667,9 +608,7 @@ function_item:
 	| structure
 	| statetable;
 
-test:
-	TEST OpenSwirly body += test_item+ CloseSwirly
-	; // See Syntax 66, 9.2
+test: TEST OpenSwirly body += test_item+ CloseSwirly; // See Syntax 66, 9.2
 
 test_item: all_purpose_item | behavior | statetable;
 
@@ -678,11 +617,9 @@ pin_value:
 	| Boolean_value
 	; // See Syntax 67, 9.3.1
 
-pin_assignment:
-	pin_variable = identifier Assign value = pin_value SemiColon; // See Syntax 68, 9.3.2
-behavior:
-	BEHAVIOR OpenSwirly behavior_item+ CloseSwirly
-	; // See Syntax 69, 9.4
+pin_assignment: pin_variable = identifier Assign value = pin_value SemiColon; // See Syntax 68, 9.3.2
+
+behavior: BEHAVIOR OpenSwirly behavior_item+ CloseSwirly; // See Syntax 69, 9.4
 
 behavior_item:
 	boolean_assignment
@@ -703,9 +640,7 @@ primitive_instantiation:
 	| identifier identifier? OpenSwirly boolean_assignment+ CloseSwirly
 	;
 
-structure:
-	STRUCTURE OpenSwirly cell_instantiation+ CloseSwirly
-	; // See Syntax 70, 9.5
+structure: STRUCTURE OpenSwirly cell_instantiation+ CloseSwirly; // See Syntax 70, 9.5
 
 cell_reference_identifier: identifier;
 
@@ -717,11 +652,10 @@ cell_instantiation:
 
 cell_instance_pin_assignment: pin_variable = identifier Assign pin_value SemiColon;
 
-statetable:
-	STATETABLE alf_id = identifier? OpenSwirly tableheader = statetable_header rows += statetable_row+ CloseSwirly
-	; // See Syntax 71, 9.6
+statetable: STATETABLE alf_id = identifier? OpenSwirly tableheader = statetable_header rows += statetable_row+ CloseSwirly; // See Syntax 71, 9.6
 
 statetable_header: inputs += identifier+ Colon outputs += identifier+ SemiColon;
+
 statetable_row: control_values += statetable_control_value+ Colon data_values += statetable_data_value+ SemiColon;
 
 statetable_control_value:
@@ -832,12 +766,16 @@ geometric_transformation:
 	shift
 	| rotate
 	| flip
-	| repeat; // See Syntax 78, 9.18
+	| repeat
+	; // See Syntax 78, 9.18
+
 shift: SHIFT OpenSwirly x = Number y = Number CloseSwirly;
+
 rotate: ROTATE Assign Number SemiColon;
+
 flip: FLIP Assign Number SemiColon;
-repeat:
-	REPEAT (Assign times += Unsigned_integer)* OpenSwirly transforms += geometric_transformation+ CloseSwirly;
+
+repeat: REPEAT (Assign times += Unsigned_integer)* OpenSwirly transforms += geometric_transformation+ CloseSwirly;
 
 artwork:
 	ARTWORK (
@@ -923,22 +861,9 @@ model_body:
 
 header_table_equation: header (table | equation); // See Syntax 88, 10.4
 
-//header: HEADER OpenSwirly header_arithmetic_model+ CloseSwirly; // See Syntax 89, 10.4
 header: HEADER OpenSwirly partial_arithmetic_model+ CloseSwirly; // See Syntax 89, 10.4
 
-//header_arithmetic_model: ( arithmetic_ref = identifier ) ( name = identifier )? ( OpenSwirly body += header_arithmetic_model_item* CloseSwirly )?;
-
-//header_arithmetic_model_item:
-//	inheritable_arithmetic_model_qualifier
-//	| table
-//	| trivial_alf_min_alf_max
-//	| arithmetic_submodel
-//	| pin
-//	;
-
-equation:
-	EQUATION OpenSwirly arithmetic_expression CloseSwirly
-	; // See Syntax 90, 10.4
+equation: EQUATION OpenSwirly arithmetic_expression CloseSwirly; // See Syntax 90, 10.4
 
 table: 'TABLE' OpenSwirly ( ret += alf_value* ) CloseSwirly;
 
@@ -981,29 +906,27 @@ arithmetic_model_container:
 	| container = identifier OpenSwirly arithmetic_model+ CloseSwirly
 	; // See Syntax 97, 10.8.1
 
-limit_arithmetic_model_container:
-	LIMIT OpenSwirly limit_arithmetic_model+ CloseSwirly; // See Syntax 98, 10.8.2
+limit_arithmetic_model_container: LIMIT OpenSwirly limit_arithmetic_model+ CloseSwirly; // See Syntax 98, 10.8.2
 
-limit_arithmetic_model:
-	arithmetic_ref = identifier name = identifier? OpenSwirly qualifiers += model_qualifier* body = limit_arithmetic_model_body CloseSwirly;
+limit_arithmetic_model: arithmetic_ref = identifier name = identifier? OpenSwirly qualifiers += model_qualifier* body = limit_arithmetic_model_body CloseSwirly;
 
 limit_arithmetic_model_body:
 	submodels += limit_arithmetic_submodel+
-	| alf_min_alf_max;
-limit_arithmetic_submodel:
-	submodel = identifier OpenSwirly violation? alf_min_alf_max CloseSwirly;
+	| alf_min_alf_max
+	;
+
+limit_arithmetic_submodel: submodel = identifier OpenSwirly violation? alf_min_alf_max CloseSwirly;
 
 early_late_arithmetic_model_container:
 	early_arithmetic_model_container late_arithmetic_model_container?
-	| late_arithmetic_model_container; // See Syntax 99, 10.8.3
-early_arithmetic_model_container:
-	EARLY OpenSwirly arithmetic_model+ CloseSwirly;
-late_arithmetic_model_container:
-	LATE OpenSwirly arithmetic_model+ CloseSwirly;
+	| late_arithmetic_model_container
+	; // See Syntax 99, 10.8.3
 
-violation:
-	VIOLATION OpenSwirly body += violation_item+ CloseSwirly
-	; // See Syntax 100, 10.10
+early_arithmetic_model_container: EARLY OpenSwirly arithmetic_model+ CloseSwirly;
+
+late_arithmetic_model_container: LATE OpenSwirly arithmetic_model+ CloseSwirly;
+
+violation: VIOLATION OpenSwirly body += violation_item+ CloseSwirly; // See Syntax 100, 10.10
 
 violation_item:
 	message_type = single_value_annotation

@@ -180,15 +180,15 @@ Number:
 	; // See Syntax 6, 6.5
 
 unsigned_number: Unsigned_integer | Unsigned_Real;
+
 Integer: Signed_integer | Unsigned_integer;
+
 Signed_integer: Sign Unsigned_integer;
 
-Unsigned_integer:
-	Digit* Decimal_digit Digit* ('_'? Digit)*
-	| Digit
-	;
+Unsigned_integer: Digit* Decimal_digit Digit* ('_'? Digit)* | Digit;
 
 Signed_Real: Sign Unsigned_Real;
+
 Unsigned_Real: Mantissa Exponent? | Unsigned_integer Exponent;
 
 fragment Sign: [+-];
@@ -317,15 +317,13 @@ annotation_value:
 	| Bit_literal
 	| Based_literal
 	| edge_value
+	| pin_variable
 	| control_expression
 	| boolean_expression
 	| arithmetic_expression
 	;
 
-annotation_container:
-	  alf_id = identifier OpenSwirly annotations += annotation+ CloseSwirly
-	| alf_id = identifier name = identifier OpenSwirly annotations += annotation+ CloseSwirly
-	;  // See Syntax 32, 7.4
+annotation_container: alf_id = identifier ( name = identifier )? OpenSwirly annotations += annotation+ CloseSwirly;  // See Syntax 32, 7.4
 
 attribute: ATTRIBUTE OpenSwirly attributes += identifier+ CloseSwirly; // See Syntax 33, 7.5
 
@@ -442,7 +440,6 @@ library:
 		SemiColon
 		| OpenSwirly body += library_item* CloseSwirly
 	)
-	//| library_template = template_instantiation
 	; // See Syntax 47, 8.2
 
 library_item: sublibrary | sublibrary_item;
@@ -815,8 +812,6 @@ artwork_reference:
 			artwork_pin += identifier Assign cell_pins += identifier SemiColon
 		)*
 	) CloseSwirly;
-
-instance_identifier: identifier;
 
 via_instantiation:
 	alf_id = identifier instance = identifier (

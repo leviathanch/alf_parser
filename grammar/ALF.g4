@@ -641,7 +641,7 @@ pin_value:
 	| Boolean_value
 	; // See Syntax 67, 9.3.1
 
-pin_variable: identifier index;
+pin_variable: identifier index?;
 
 pin_assignment: pin_variable Assign pin_value SemiColon; // See Syntax 68, 9.3.2
 

@@ -60,6 +60,7 @@ EARLY: 'EARLY';
 LATE: 'LATE';
 VIOLATION: 'VIOLATION';
 EDGE_NUMBER: 'EDGE_NUMBER';
+MEMBERS: 'MEMBERS';
 
 SemiColon: ';' ;
 Colon: ':' ;
@@ -67,6 +68,8 @@ OpenSwirly: '{' ;
 CloseSwirly: '}' ;
 OpenSquareBracket: '[';
 CloseSquareBracket: ']';
+OpenBracket: '(';
+CloseBracket: ')';
 
 fragment AToF: [ABCDEFabcdef];
 
@@ -86,24 +89,27 @@ fragment Digit: Decimal_digit|ZERO|ONE;
 // See Syntax 1, 5.1
 alf_type: identifier | AtSign | Colon;
 
-alf_name: identifier | control_expression;
-
 all_purpose_value:
 	Number
 	| identifier
 	| Quoted_string
-	| Bit_literal
+	//| Bit_literal
 	| Based_literal
-	| edge_value
+	//| edge_value
 	| pin_variable
-	| control_expression
+	//| control_expression
 	;
 
 index_value: Unsigned_integer | identifier;
 
 string_value: Quoted_string | identifier;
 
-arithmetic_value: Number | identifier | Bit_literal | Based_literal;
+arithmetic_value:
+	Number
+	| identifier
+	//| Bit_literal
+	| Based_literal
+	;
 
 fragment Newline: '\n';
 
@@ -248,7 +254,7 @@ based_edge_literal: Based_literal Based_literal;
 
 Symbolic_edge_literal: '?~' | '?!' | '?-';
 
-edge_value: '(' edge_literal ')';
+edge_value:  edge_literal CloseBracket;
 
 index: OpenSquareBracket ( a = ( Atomic_identifier | Number ) ) ( Colon ( b = ( Atomic_identifier | Number ) ) )? CloseSquareBracket; // See Syntax 8, 6.6
 
@@ -312,15 +318,15 @@ multi_value_annotation: identifier OpenSwirly annotation_value+ CloseSwirly;
 
 annotation_value:
 	Number
-	| identifier
+	//| identifier
 	| Quoted_string
-	| Bit_literal
+	//| Bit_literal
 	| Based_literal
-	| edge_value
+	//| edge_value
 	| pin_variable
-	| control_expression
-	| boolean_expression
-	| arithmetic_expression
+	//| control_expression
+	//| boolean_expression
+	//| arithmetic_expression
 	;
 
 annotation_container: alf_id = identifier ( name = identifier )? OpenSwirly annotations += annotation+ CloseSwirly;  // See Syntax 32, 7.4
@@ -332,7 +338,7 @@ alf_property: PROPERTY alf_id = identifier? OpenSwirly annotations += annotation
 alias_declaration:
 	ALIAS (
 		alf_id = identifier Assign original = identifier
-		| macro = vector_expression_macro Assign '(' expression = vector_expression ')'
+		| macro = vector_expression_macro Assign OpenBracket expression = vector_expression CloseBracket
 	) SemiColon;
 	// See Syntax 35, 7.7
 
@@ -483,12 +489,12 @@ cell_item:
 	;
 
 pin: // See Syntax 49, 8.6
-	PIN Assign? identifier SemiColon
-	| PIN alf_id = identifier (
+	PIN Assign? ( pin_id = identifier ) SemiColon | 
+	PIN ( pin_id = identifier ) (
 		SemiColon
 		| OpenSwirly scalar_pin_item* CloseSwirly
 	)
-	| PIN first = index alf_id = identifier (second = index)? (
+	| PIN ( first = index ) ( pin_id = identifier ) (second = index)? (
 		SemiColon
 		| OpenSwirly vector_pin_item* CloseSwirly
 	)
@@ -498,12 +504,18 @@ scalar_pin_item: all_purpose_item | pattern | port;
 
 vector_pin_item: all_purpose_item | alf_range;
 
-pingroup:
-	PINGROUP alf_id = identifier OpenSwirly multi_value_annotation all_purpose_item* CloseSwirly
-	| PINGROUP vector_index = index alf_id = identifier OpenSwirly multi_value_annotation vector_pingroup_item* CloseSwirly
-	; // See Syntax 50, 8.7
+pingroup: simple_pingroup | vector_pingroup;
 
-vector_pingroup_item: all_purpose_item | alf_range;
+simple_pingroup: PINGROUP identifier OpenSwirly members +all_purpose_item+ CloseSwirly;
+
+members: MEMBERS OpenSwirly identifier+ CloseSwirly;
+
+vector_pingroup: PINGROUP OpenSquareBracket index_value Colon index_value CloseSquareBracket identifier OpenSwirly members vector_pingroup_item+ CloseSwirly;
+
+vector_pingroup_item:
+	all_purpose_item
+	| alf_range
+	;
 
 primitive:
 	'PRIMITIVE' alf_id = identifier (
@@ -686,9 +698,9 @@ statetable_control_value:
 
 statetable_data_value:
 	Boolean_value
-	| '(' '!' pin_variable ')'
-	| '(' '~' pin_variable ')'
-	| '(' pin_variable ')'
+	| OpenBracket '!' pin_variable CloseBracket
+	| OpenBracket '~' pin_variable CloseBracket
+	| OpenBracket pin_variable CloseBracket
 	;
 
 non_scan_cell:
@@ -705,7 +717,7 @@ non_scan_cell_reference:
 alf_range: RANGE OpenSwirly alf_from_index = index_value Colon until_index = index_value CloseSwirly; // See Syntax 73, 9.8
 
 boolean_expression:
-	'(' inner = boolean_expression ')'
+	OpenBracket inner = boolean_expression CloseBracket
 	| pin_val = pin_variable
 	| val = Boolean_value
 	| unary = boolean_unary_operator right = boolean_expression
@@ -738,7 +750,7 @@ boolean_binary_operator:
 	;
 
 vector_expression:
-	'(' inner = vector_expression ')'
+	OpenBracket inner = vector_expression CloseBracket
 	| event = single_event
 	| left = vector_expression op = vector_operator right = vector_expression
 	| condition = boolean_expression '?' then = vector_expression Colon otherwise = vector_expression
@@ -755,14 +767,14 @@ Event_or: Or | LogicOr;
 Control_and: And | LogicAnd;
 
 control_expression:
-	'(' vector_expression ')'
-	| '(' boolean_expression ')';
+	OpenBracket vector_expression CloseBracket
+	| OpenBracket boolean_expression CloseBracket;
 
 wire_instantiation:
 	wire_reference = identifier wire_instance = identifier (
 		SemiColon
-		| OpenSwirly values += pin_value* CloseSwirly
-		| OpenSwirly assignments += pin_assignment* CloseSwirly
+		| OpenSwirly values += pin_value+ CloseSwirly
+		| OpenSwirly assignments += pin_assignment+ CloseSwirly
 	)
 	; // See Syntax 76, 9.15
 
@@ -820,12 +832,12 @@ via_instantiation:
 	); // See Syntax 80, 9.20
 
 arithmetic_expression:
-	'(' inner = arithmetic_expression ')'
+	OpenBracket inner = arithmetic_expression CloseBracket
 	| val = arithmetic_value
 	| condition = boolean_expression '?' then = arithmetic_expression Colon otherwise = arithmetic_expression
-	| unary = unary_operator right = arithmetic_expression
+	//| unary = unary_operator right = arithmetic_expression
 	| left = arithmetic_expression binary = arithmetic_operator right = arithmetic_expression
-	| marco = macro_arithmetic_operator '(' macro_args += arithmetic_expression ( ',' macro_args += arithmetic_expression )* ')'
+	| marco = macro_arithmetic_operator OpenBracket macro_args += arithmetic_expression ( ',' macro_args += arithmetic_expression )* CloseBracket
 	; // See Syntax 81, 10.1
 
 Abs: 'abs';
